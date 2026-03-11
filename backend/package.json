@@ -1,0 +1,30 @@
+{
+  "name": "civic-sutra-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Civic Sutra - Speech to Text Transcription",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "mock": "node server-mock.js",
+    "mock:dev": "nodemon server-mock.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.22.1",
+    "multer": "^1.4.5-lts.1",
+    "openai": "^4.104.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "transcription",
+    "whisper",
+    "openai",
+    "express"
+  ],
+  "author": "",
+  "license": "MIT"
+}
