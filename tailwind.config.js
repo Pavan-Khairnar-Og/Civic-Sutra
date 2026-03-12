@@ -8,15 +8,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Custom theme colors
-        background: 'var(--color-background)',
-        surface: 'var(--color-surface)',
-        primary: 'var(--color-primary)',
-        secondary: 'var(--color-secondary)',
-        text: 'var(--color-text)',
-        border: 'var(--color-border)',
-        danger: 'var(--color-danger)',
-        muted: 'var(--color-muted)',
+        // Custom theme colors using CSS variables with proper fallbacks
+        background: 'var(--color-background, #F5F5DC)',
+        surface: 'var(--color-surface, #FFFFFF)',
+        primary: 'var(--color-primary, #76D2DB)',
+        secondary: 'var(--color-secondary, #D6A99D)',
+        text: 'var(--color-text, #1F2937)',
+        border: 'var(--color-border, #E5E7EB)',
+        danger: 'var(--color-danger, #DA4848)',
+        muted: 'var(--color-muted, #6B7280)',
         // Beige color for light mode
         beige: '#F5F5DC',
       },
@@ -30,9 +30,9 @@ export default {
         'medium': '0 4px 16px rgba(0, 0, 0, 0.15)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.3s ease-out',
-        'slide-in': 'slideIn 0.3s ease-out',
-        'scale-in': 'scaleIn 0.3s ease-out',
+        'fade-in': 'fadeIn 0.2s ease-out',
+        'slide-in': 'slideIn 0.2s ease-out',
+        'scale-in': 'scaleIn 0.2s ease-out',
       },
       keyframes: {
         fadeIn: {

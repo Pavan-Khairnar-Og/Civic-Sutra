@@ -12,10 +12,27 @@ import Badge from '../components/ui/Badge'
  * Uses custom colors: Primary (#76D2DB), Secondary (#D6A99D), Beige background
  */
 const Home = () => {
-  const { isLight, isDark } = useTheme()
+  const { isLight, isDark, theme, currentColors } = useTheme()
+
+  // Debug: Log theme state
+  React.useEffect(() => {
+    console.log('Home page theme:', { theme, isLight, isDark, currentColors })
+  }, [theme, isLight, isDark, currentColors])
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Debug Section - Remove after testing */}
+      <div className="fixed top-20 right-4 z-50 p-4 bg-surface border border-border rounded-xl shadow-soft">
+        <h3 className="text-sm font-semibold text-text mb-2">Theme Debug</h3>
+        <p className="text-xs text-muted">Theme: {theme}</p>
+        <p className="text-xs text-muted">Light: {isLight ? 'Yes' : 'No'}</p>
+        <p className="text-xs text-muted">Dark: {isDark ? 'Yes' : 'No'}</p>
+        <div className="mt-2 space-y-1">
+          <div className="w-4 h-4 bg-primary rounded"></div>
+          <div className="w-4 h-4 bg-secondary rounded"></div>
+          <div className="w-4 h-4 bg-danger rounded"></div>
+        </div>
+      </div>
       {/* Hero Section - Modern with Custom Colors */}
       <section className={`
         relative overflow-hidden py-20 px-4 sm:py-24 sm:px-6 lg:py-32 lg:px-8

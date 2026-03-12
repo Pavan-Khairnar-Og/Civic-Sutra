@@ -29,6 +29,57 @@
   --color-muted: #94A3B8;
 }
 
+/* Force theme colors to be applied */
+html, body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+}
+
+/* Ensure theme colors are visible for debugging */
+.bg-background {
+  background-color: var(--color-background) !important;
+}
+
+.bg-surface {
+  background-color: var(--color-surface) !important;
+}
+
+.bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+.bg-secondary {
+  background-color: var(--color-secondary) !important;
+}
+
+.bg-danger {
+  background-color: var(--color-danger) !important;
+}
+
+.text-text {
+  color: var(--color-text) !important;
+}
+
+.text-primary {
+  color: var(--color-primary) !important;
+}
+
+.text-secondary {
+  color: var(--color-secondary) !important;
+}
+
+.text-danger {
+  color: var(--color-danger) !important;
+}
+
+.text-muted {
+  color: var(--color-muted) !important;
+}
+
+.border-border {
+  border-color: var(--color-border) !important;
+}
+
 /* Smooth transitions for theme switching */
 * {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;

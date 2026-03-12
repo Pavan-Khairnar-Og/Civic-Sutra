@@ -299,6 +299,27 @@ const ReportIssue = () => {
   }
 
   /**
+   * Retake photo
+   * Clears current image and restarts camera
+   */
+  const retakePhoto = () => {
+    setCapturedImage(null)
+    setError('')
+    setSuccess('')
+    startCamera()
+  }
+
+  /**
+   * Delete photo
+   * Clears current image without restarting camera
+   */
+  const deletePhoto = () => {
+    setCapturedImage(null)
+    setError('')
+    setSuccess('')
+  }
+
+  /**
    * Cleanup camera stream when component unmounts
    */
   useEffect(() => {

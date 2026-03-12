@@ -76,6 +76,13 @@ export const ThemeProvider = ({ children }) => {
       root.style.setProperty(`--color-${key}`, value)
     })
     
+    // Debug: Log theme application
+    console.log(`Theme applied: ${theme}`, {
+      bodyClass: body.className,
+      rootClass: root.className,
+      colors: colors
+    })
+    
     // Store preference
     localStorage.setItem('theme', theme)
   }, [theme, isLoaded, themes])
