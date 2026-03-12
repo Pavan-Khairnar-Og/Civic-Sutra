@@ -1,29 +1,35 @@
 import React from 'react'
+import Card from './ui/Card'
+import Badge from './ui/Badge'
+import Button from './ui/Button'
 
 /**
- * ReportCard component
+ * ReportCard component - Modern, mobile-first design
  * Displays a single civic issue report in a card format
  * Used in MyReports and AdminDashboard pages
- * Shows image, description, location, status, and created time
+ * Shows image, description, location, status, priority, and department
  */
 const ReportCard = ({ 
   report, 
   showStatusUpdate = false, 
   onStatusChange = null,
   showActions = false,
-  onViewDetails = null 
+  onViewDetails = null,
+  compact = false 
 }) => {
-  // Get status color based on issue status
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'resolved':
-        return 'bg-green-100 text-green-800 border-green-200'
+  // Get priority color
+  const getPriorityColor = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case 'critical':
+        return 'critical'
+      case 'high':
+        return 'high'
+      case 'medium':
+        return 'medium'
+      case 'low':
+        return 'low'
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+        return 'medium'
     }
   }
 
@@ -36,8 +42,30 @@ const ReportCard = ({
         return '🔧'
       case 'resolved':
         return '✅'
+      case 'rejected':
+        return '❌'
       default:
         return '📋'
+    }
+  }
+
+  // Get department icon
+  const getDepartmentIcon = (department) => {
+    switch (department?.toLowerCase()) {
+      case 'sanitation':
+        return '🗑️'
+      case 'water supply':
+        return '💧'
+      case 'electricity':
+        return '⚡'
+      case 'public works':
+        return '🏗️'
+      case 'traffic':
+        return '🚦'
+      case 'parks':
+        return '🌳'
+      default:
+        return '🏢'
     }
   }
 
@@ -79,11 +107,73 @@ const ReportCard = ({
     }
   }
 
+  // Compact version for mobile
+  if (compact) {
+    return (
+      <Card hover={true} className="p-4">
+        <div className="flex gap-4">
+          {/* Thumbnail */}
+          {report.image_url && (
+            <div className="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
+              <img
+                src={report.image_url}
+                alt="Issue"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/80x80?text=No+Image'
+                }}
+              />
+            </div>
+          )}
+          
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            {/* Status and Priority */}
+            <div className="flex items-center gap-2 mb-2">
+              <Badge variant={report.status} size="sm">
+                {getStatusIcon(report.status)} {report.status || 'pending'}
+              </Badge>
+              <Badge variant={getPriorityColor(report.priority)} size="sm">
+                {report.priority || 'medium'}
+              </Badge>
+            </div>
+            
+            {/* Description */}
+            <p className="text-sm text-gray-700 line-clamp-2 mb-2">
+              {report.description || 'No description provided'}
+            </p>
+            
+            {/* Meta */}
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>📍 {formatLocation(report.latitude, report.longitude)}</span>
+              <span>{formatTime(report.created_at)}</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Actions */}
+        {showActions && onViewDetails && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              fullWidth={true}
+              onClick={() => onViewDetails(report)}
+            >
+              View Details
+            </Button>
+          </div>
+        )}
+      </Card>
+    )
+  }
+
+  // Full version
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 border border-gray-100">
+    <Card hover={true} className="overflow-hidden">
       {/* Image Section */}
       {report.image_url && (
-        <div className="relative h-48 bg-gray-100 rounded-t-lg overflow-hidden">
+        <div className="relative h-48 sm:h-56 bg-gray-100">
           <img
             src={report.image_url}
             alt="Issue image"
@@ -94,18 +184,25 @@ const ReportCard = ({
           />
           
           {/* Status Badge Overlay */}
-          <div className="absolute top-2 right-2">
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(report.status)}`}>
+          <div className="absolute top-3 right-3">
+            <Badge variant={report.status} size="sm">
               {getStatusIcon(report.status)} {report.status || 'pending'}
-            </span>
+            </Badge>
+          </div>
+          
+          {/* Priority Badge Overlay */}
+          <div className="absolute top-3 left-3">
+            <Badge variant={getPriorityColor(report.priority)} size="sm">
+              {report.priority || 'medium'} priority
+            </Badge>
           </div>
         </div>
       )}
 
       {/* Content Section */}
-      <div className="p-6">
+      <Card.Body className="p-4 sm:p-6">
         {/* Header */}
-        <div className="flex justify-between items-start mb-3">
+        <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-900 mb-1">
               Civic Issue Report
@@ -118,24 +215,31 @@ const ReportCard = ({
 
         {/* Description */}
         <div className="mb-4">
-          <p className="text-gray-700 line-clamp-3">
+          <p className="text-gray-700 line-clamp-3 leading-relaxed">
             {report.description || 'No description provided'}
           </p>
         </div>
 
-        {/* Location */}
-        <div className="mb-4">
+        {/* Location and Department */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div className="flex items-center text-sm text-gray-600">
             <span className="mr-2">📍</span>
-            <span className="font-mono text-xs">
+            <span className="font-mono text-xs break-all">
               {formatLocation(report.latitude, report.longitude)}
             </span>
           </div>
+          
+          {report.department && (
+            <div className="flex items-center text-sm text-gray-600">
+              <span className="mr-2">{getDepartmentIcon(report.department)}</span>
+              <span className="capitalize">{report.department}</span>
+            </div>
+          )}
         </div>
 
         {/* Status Update Section (Admin Only) */}
         {showStatusUpdate && onStatusChange && (
-          <div className="mb-4">
+          <div className="mb-4 p-4 bg-gray-50 rounded-lg">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Update Status:
             </label>
@@ -147,26 +251,30 @@ const ReportCard = ({
               <option value="pending">⏳ Pending</option>
               <option value="in_progress">🔧 In Progress</option>
               <option value="resolved">✅ Resolved</option>
+              <option value="rejected">❌ Rejected</option>
             </select>
           </div>
         )}
 
         {/* Action Buttons */}
         {showActions && onViewDetails && (
-          <div className="flex space-x-3">
-            <button
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button 
+              variant="primary" 
+              size="md"
+              fullWidth={true}
               onClick={() => onViewDetails(report)}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
             >
               View Details
-            </button>
+            </Button>
             {report.image_url && (
-              <button
+              <Button 
+                variant="outline" 
+                size="md"
                 onClick={() => window.open(report.image_url, '_blank')}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
               >
                 View Image
-              </button>
+              </Button>
             )}
           </div>
         )}
@@ -177,8 +285,8 @@ const ReportCard = ({
             Report ID: {report.id?.substring(0, 8)}...
           </p>
         </div>
-      </div>
-    </div>
+      </Card.Body>
+    </Card>
   )
 }
 

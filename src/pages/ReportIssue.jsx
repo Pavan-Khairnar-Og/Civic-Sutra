@@ -3,11 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { supabase, storage } from '../services/supabase'
 import SpeechToText from '../components/SpeechToText'
 import AdvancedLocationPicker from '../components/AdvancedLocationPicker'
+import Button from '../components/ui/Button'
+import Card from '../components/ui/Card'
+import Input from '../components/ui/Input'
+import Badge from '../components/ui/Badge'
 
 /**
- * ReportIssue page component
+ * ReportIssue page component - Modern, mobile-first design
  * Enhanced implementation with camera capture, GPS location detection, voice recording, and Supabase integration
- * Provides comprehensive civic issue reporting functionality
+ * Clean, intuitive interface for non-technical users
  */
 const ReportIssue = () => {
   const navigate = useNavigate()
@@ -294,36 +298,50 @@ const ReportIssue = () => {
   }, [])
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Report a Civic Issue
-        </h1>
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            Report a Civic Issue
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Help improve your community by reporting issues. Your voice matters!
+          </p>
+        </div>
 
         {/* Success Message */}
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
-            {success}
-          </div>
+          <Card className="mb-6 border-green-200 bg-green-50">
+            <div className="flex items-center">
+              <span className="text-2xl mr-3">✅</span>
+              <p className="text-green-800 font-medium">{success}</p>
+            </div>
+          </Card>
         )}
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            {error}
-          </div>
+          <Card className="mb-6 border-red-200 bg-red-50">
+            <div className="flex items-center">
+              <span className="text-2xl mr-3">❌</span>
+              <p className="text-red-800 font-medium">{error}</p>
+            </div>
+          </Card>
         )}
 
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Camera Capture Section */}
-          <section>
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              📷 Capture Photo
-            </h2>
+          <Card>
+            <Card.Header>
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                📷 Capture Photo Evidence
+              </h2>
+            </Card.Header>
             
-            <div className="space-y-4">
+            <Card.Body>
               {/* Camera Preview / Captured Image */}
-              <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ minHeight: '300px' }}>
+              <div className="relative bg-gray-100 rounded-lg overflow-hidden mb-4" style={{ minHeight: '280px' }}>
                 {isCapturing ? (
                   // Live camera preview
                   <video
@@ -332,7 +350,7 @@ const ReportIssue = () => {
                     playsInline
                     muted
                     className="w-full h-full object-cover"
-                    style={{ minHeight: '300px' }}
+                    style={{ minHeight: '280px' }}
                   />
                 ) : capturedImage ? (
                   // Show captured image
@@ -340,160 +358,178 @@ const ReportIssue = () => {
                     src={capturedImage}
                     alt="Captured issue"
                     className="w-full h-full object-cover"
-                    style={{ minHeight: '300px' }}
+                    style={{ minHeight: '280px' }}
                     onError={(e) => {
                       console.error('Image load error:', e)
+                      e.target.src = 'https://via.placeholder.com/400x300?text=Image+Error'
                     }}
                   />
                 ) : (
-                  // Placeholder when no camera is active
-                  <div className="flex items-center justify-center h-64">
+                  // Placeholder
+                  <div className="flex items-center justify-center h-full" style={{ minHeight: '280px' }}>
                     <div className="text-center">
-                      <div className="text-gray-400 text-6xl mb-4">📷</div>
-                      <p className="text-gray-600">No photo captured yet</p>
+                      <div className="text-4xl mb-2">📷</div>
+                      <p className="text-gray-500">No photo captured yet</p>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Camera Controls */}
-              <div className="flex space-x-4">
+              <div className="flex flex-col sm:flex-row gap-3">
                 {!isCapturing && !capturedImage && (
-                  <button
-                    type="button"
+                  <Button 
+                    variant="primary" 
                     onClick={startCamera}
-                    disabled={isLoading}
-                    className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                    fullWidth={true}
+                    className="sm:flex-1"
                   >
-                    📷 Start Camera
-                  </button>
+                    📸 Start Camera
+                  </Button>
                 )}
-
+                
                 {isCapturing && (
                   <>
-                    <button
-                      type="button"
+                    <Button 
+                      variant="success" 
                       onClick={capturePhoto}
-                      className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                      disabled={isLoading}
+                      loading={isLoading}
+                      fullWidth={true}
+                      className="sm:flex-1"
                     >
                       📸 Capture Photo
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button 
+                      variant="outline" 
                       onClick={stopCamera}
-                      className="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+                      fullWidth={true}
+                      className="sm:flex-1"
                     >
-                      Cancel
-                    </button>
+                      ❌ Cancel
+                    </Button>
                   </>
                 )}
-
+                
                 {capturedImage && (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => setCapturedImage(null)}
-                      className="flex-1 bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-700 transition-colors"
+                    <Button 
+                      variant="warning" 
+                      onClick={retakePhoto}
+                      fullWidth={true}
+                      className="sm:flex-1"
                     >
                       🔄 Retake Photo
-                    </button>
+                    </Button>
+                    <Button 
+                      variant="danger" 
+                      onClick={deletePhoto}
+                      fullWidth={true}
+                      className="sm:flex-1"
+                    >
+                      🗑️ Delete Photo
+                    </Button>
                   </>
                 )}
               </div>
-            </div>
 
-            {/* Hidden canvas for image capture */}
-            <canvas ref={canvasRef} className="hidden" />
-          </section>
+              {/* Hidden canvas for image capture */}
+              <canvas ref={canvasRef} className="hidden" />
+            </Card.Body>
+          </Card>
 
           {/* Speech-to-Text Section */}
-          <section>
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              🎤 Speech-to-Text Description
-            </h2>
+          <Card>
+            <Card.Header>
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                🎤 Voice Description
+              </h2>
+            </Card.Header>
             
-            <SpeechToText 
-              onTranscript={(transcript) => {
-                setVoiceTranscript(transcript)
-                setDescription(transcript)
-              }}
-              currentTranscript={voiceTranscript}
-            />
-          </section>
+            <Card.Body>
+              <SpeechToText 
+                onTranscript={(transcript) => {
+                  setVoiceTranscript(transcript)
+                  setDescription(transcript)
+                }}
+                currentTranscript={voiceTranscript}
+              />
+            </Card.Body>
+          </Card>
 
-          {/* Advanced Location Section */}
-          <section>
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              �️ Advanced Location Picker
-            </h2>
+          {/* Description Input Section */}
+          <Card>
+            <Card.Header>
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                📝 Issue Description
+              </h2>
+            </Card.Header>
             
-            <AdvancedLocationPicker 
-              onLocationChange={(newLocation) => setLocation(newLocation)}
-              initialLocation={location}
-            />
-          </section>
-
-          {/* Description Section */}
-          <section>
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">
-              ✏️ Description
-            </h2>
-            
-            <div>
-              <label htmlFor="issue-description" className="block text-sm font-medium text-gray-700 mb-2">
-                Issue Description *
-              </label>
-              <textarea
-                id="issue-description"
-                name="issue-description"
+            <Card.Body>
+              <Input.Textarea
+                label="Describe the civic issue"
+                placeholder="Please provide details about the issue you're reporting..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Please provide a detailed description of the civic issue you're reporting..."
                 rows={4}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                required={true}
+                helperText="Be as specific as possible to help us address the issue quickly"
               />
-              <p className="text-sm text-gray-500 mt-1">
-                {description.length}/500 characters
-              </p>
-            </div>
-          </section>
+            </Card.Body>
+          </Card>
+
+          {/* Location Section */}
+          <Card>
+            <Card.Header>
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                📍 Issue Location
+              </h2>
+            </Card.Header>
+            
+            <Card.Body>
+              <AdvancedLocationPicker 
+                onLocationChange={(newLocation) => setLocation(newLocation)}
+                initialLocation={location}
+              />
+              
+              {location.latitude && location.longitude && (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center">
+                    <span className="text-blue-600 mr-2">📍</span>
+                    <div>
+                      <p className="text-sm font-medium text-blue-900">Location Selected</p>
+                      <p className="text-xs text-blue-700 font-mono">
+                        {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
 
           {/* Submit Section */}
-          <section>
-            <div className="flex space-x-4">
-              <button
-                type="button"
-                onClick={submitReport}
-                disabled={isLoading || !capturedImage || (!description.trim() && !voiceTranscript.trim()) || !location.latitude}
-                className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          <Card>
+            <Card.Body>
+              <Button 
+                variant="primary" 
+                size="lg"
+                onClick={handleSubmit}
+                disabled={isLoading || !description.trim() || !location.latitude}
+                loading={isLoading}
+                fullWidth={true}
+                className="text-lg py-4"
               >
-                {isLoading ? (
-                  <span className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Submitting Report...
-                  </span>
-                ) : (
-                  '📤 Submit Report'
-                )}
-              </button>
+                {isLoading ? 'Submitting...' : '🚀 Submit Issue Report'}
+              </Button>
               
-              <button
-                type="button"
-                onClick={resetForm}
-                className="px-6 py-3 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
-              >
-                🔄 Reset Form
-              </button>
-            </div>
-            
-            <div className="mt-4 text-sm text-gray-500">
-              <p>• All fields marked with * are required</p>
-              <p>• You can either type a description OR record a voice message</p>
-              <p>• Your report will be submitted with "pending" status</p>
-              <p>• Location and photo help us resolve issues faster</p>
-              <p>• Voice recording uses AI transcription for accurate text conversion</p>
-            </div>
-          </section>
+              <div className="mt-4 text-center">
+                <p className="text-sm text-gray-500">
+                  By submitting, you agree to help improve your community
+                </p>
+              </div>
+            </Card.Body>
+          </Card>
         </div>
       </div>
     </div>
