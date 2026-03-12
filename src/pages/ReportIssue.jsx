@@ -289,6 +289,14 @@ const ReportIssue = () => {
   }
 
   /**
+   * Handle form submission
+   * Wrapper function for submitReport to match button onClick handler
+   */
+  const handleSubmit = async () => {
+    await submitReport()
+  }
+
+  /**
    * Cleanup camera stream when component unmounts
    */
   useEffect(() => {
