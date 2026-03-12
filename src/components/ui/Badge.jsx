@@ -1,7 +1,7 @@
 import React from 'react'
 
 /**
- * Modern Badge Component - Figma-style design system
+ * Modern Badge Component - Custom Color Palette
  * Clean, minimal badges with smooth animations and theme support
  * Color-coded badges for status, priority, and categories
  */
@@ -25,13 +25,12 @@ const Badge = ({
     lg: 'px-4 py-2 text-base'
   }
   
-  // Color variants with theme support
+  // Color variants with custom colors
   const variantStyles = {
     primary: 'bg-primary/10 text-primary border border-primary/20',
-    secondary: 'bg-accent/10 text-accent border border-accent/20',
-    warning: 'bg-warning/10 text-warning border border-warning/20',
+    secondary: 'bg-secondary/10 text-secondary border border-secondary/20',
     danger: 'bg-danger/10 text-danger border border-danger/20',
-    success: 'bg-accent/10 text-accent border border-accent/20',
+    success: 'bg-secondary/10 text-secondary border border-secondary/20',
     info: 'bg-primary/10 text-primary border border-primary/20',
     gray: 'bg-muted/10 text-muted border border-muted/20',
     outline: 'border border-border text-text',
@@ -41,16 +40,16 @@ const Badge = ({
   // Priority-specific colors
   const priorityStyles = {
     critical: 'bg-danger/10 text-danger border border-danger/20',
-    high: 'bg-warning/10 text-warning border border-warning/20',
-    medium: 'bg-warning/10 text-warning/60 border border-warning/20',
-    low: 'bg-accent/10 text-accent border border-accent/20'
+    high: 'bg-secondary/10 text-secondary border border-secondary/20',
+    medium: 'bg-primary/10 text-primary border border-primary/20',
+    low: 'bg-muted/10 text-muted border border-muted/20'
   }
   
   // Status-specific colors
   const statusStyles = {
-    pending: 'bg-warning/10 text-warning border border-warning/20',
+    pending: 'bg-secondary/10 text-secondary border border-secondary/20',
     'in-progress': 'bg-primary/10 text-primary border border-primary/20',
-    resolved: 'bg-accent/10 text-accent border border-accent/20',
+    resolved: 'bg-secondary/10 text-secondary border border-secondary/20',
     rejected: 'bg-danger/10 text-danger border border-danger/20'
   }
   

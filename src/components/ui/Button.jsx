@@ -1,9 +1,9 @@
 import React from 'react'
 
 /**
- * Modern Button Component - Figma-style design system
+ * Modern Button Component - Custom Color Palette
  * Clean, minimal buttons with smooth animations and theme support
- * Supports different variants, sizes, and states
+ * Custom colors: Primary (#76D2DB), Secondary (#D6A99D), Danger (#DA4848)
  */
 const Button = ({ 
   children, 
@@ -33,23 +33,19 @@ const Button = ({
     xl: 'px-8 py-6 text-xl'
   }
   
-  // Color variants with theme support
+  // Color variants with custom colors
   const variantStyles = {
     primary: `
-      bg-primary text-white hover:bg-primary/90 focus:ring-primary
-      shadow-sm hover:shadow-md
+      bg-primary text-text hover:bg-primary/90 focus:ring-primary
+      shadow-soft hover:shadow-medium
     `,
     secondary: `
-      bg-accent text-white hover:bg-accent/90 focus:ring-accent
-      shadow-sm hover:shadow-md
-    `,
-    warning: `
-      bg-warning text-white hover:bg-warning/90 focus:ring-warning
-      shadow-sm hover:shadow-md
+      bg-secondary text-text hover:bg-secondary/90 focus:ring-secondary
+      shadow-soft hover:shadow-medium
     `,
     danger: `
       bg-danger text-white hover:bg-danger/90 focus:ring-danger
-      shadow-sm hover:shadow-md
+      shadow-soft hover:shadow-medium
     `,
     outline: `
       border-2 border-primary text-primary hover:bg-primary/10 focus:ring-primary
@@ -59,13 +55,9 @@ const Button = ({
       text-primary hover:bg-primary/10 focus:ring-primary
       bg-transparent
     `,
-    success: `
-      bg-accent text-white hover:bg-accent/90 focus:ring-accent
-      shadow-sm hover:shadow-md
-    `,
     muted: `
       bg-surface text-text hover:bg-surface/80 border border-border
-      shadow-sm hover:shadow-md
+      shadow-soft hover:shadow-medium
     `
   }
   

@@ -8,16 +8,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Theme-aware colors that will change with CSS variables
+        // Custom theme colors
         background: 'var(--color-background)',
         surface: 'var(--color-surface)',
         primary: 'var(--color-primary)',
-        accent: 'var(--color-accent)',
+        secondary: 'var(--color-secondary)',
         text: 'var(--color-text)',
         border: 'var(--color-border)',
-        warning: 'var(--color-warning)',
         danger: 'var(--color-danger)',
         muted: 'var(--color-muted)',
+        // Beige color for light mode
+        beige: '#F5F5DC',
       },
       borderRadius: {
         'xl': '0.75rem',
@@ -25,8 +26,8 @@ export default {
         '3xl': '1.5rem',
       },
       boxShadow: {
-        'glow': '0 0 20px var(--color-primary / 0.3)',
-        'glow-accent': '0 0 20px var(--color-accent / 0.3)',
+        'soft': '0 2px 8px rgba(0, 0, 0, 0.1)',
+        'medium': '0 4px 16px rgba(0, 0, 0, 0.15)',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',

@@ -1,7 +1,7 @@
 import React from 'react'
 
 /**
- * Modern Card Component - Figma-style design system
+ * Modern Card Component - Custom Color Palette
  * Clean, minimal cards with soft shadows and rounded corners
  * Supports dark/light theme and hover animations
  */
@@ -9,16 +9,16 @@ const Card = ({
   children, 
   className = '',
   padding = 'md',
-  shadow = 'sm',
+  shadow = 'soft',
   hover = false,
   border = true,
   ...props 
 }) => {
   // Base styles with theme-aware colors
   const baseStyles = `
-    bg-surface rounded-xl transition-all duration-300 ease-out
+    bg-surface rounded-xl transition-all duration-200 ease-out
     ${border ? 'border border-border' : ''}
-    ${hover ? 'hover:shadow-lg hover:-translate-y-1' : ''}
+    ${hover ? 'hover:shadow-medium hover:-translate-y-1' : ''}
   `
   
   // Padding variants
@@ -30,12 +30,12 @@ const Card = ({
     xl: 'p-10'
   }
   
-  // Shadow variants with theme awareness
+  // Shadow variants
   const shadowStyles = {
     none: '',
-    sm: 'shadow-sm',
-    md: 'shadow-md',
-    lg: 'shadow-lg',
+    soft: 'shadow-soft',
+    medium: 'shadow-medium',
+    large: 'shadow-lg',
     xl: 'shadow-xl'
   }
   

@@ -1,38 +1,37 @@
 /**
- * Global CSS Variables for Theme System
+ * Global CSS Variables for Custom Theme System
  * Defines CSS custom properties for light and dark themes
  * Used by Tailwind CSS for dynamic theming
+ * Custom colors: Primary (#76D2DB), Secondary (#D6A99D), Danger (#DA4848)
  */
 
-/* Light Theme Colors */
+/* Light Theme Colors - Custom Palette */
 :root {
-  --color-background: #F8FAFC;
-  --color-surface: #FFFFFF;
-  --color-primary: #3B82F6;
-  --color-accent: #22C55E;
-  --color-text: #0F172A;
-  --color-border: #E2E8F0;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
-  --color-muted: #64748B;
+  --color-background: #F5F5DC; /* beige */
+  --color-surface: #FFFFFF; /* white */
+  --color-primary: #76D2DB; /* primary accent */
+  --color-secondary: #D6A99D; /* soft highlight */
+  --color-text: #1F2937; /* dark gray */
+  --color-border: #E5E7EB; /* light gray */
+  --color-danger: #DA4848; /* alert/critical */
+  --color-muted: #6B7280;
 }
 
-/* Dark Theme Colors */
+/* Dark Theme Colors - Custom Palette */
 .dark {
-  --color-background: #0F172A;
-  --color-surface: #1E293B;
-  --color-primary: #60A5FA;
-  --color-accent: #34D399;
-  --color-text: #F1F5F9;
-  --color-border: #334155;
-  --color-warning: #F59E0B;
-  --color-danger: #EF4444;
+  --color-background: #0F172A; /* dark blue */
+  --color-surface: #1E293B; /* dark blue lighter */
+  --color-primary: #76D2DB; /* primary accent (same) */
+  --color-secondary: #D6A99D; /* soft highlight (same) */
+  --color-text: #F1F5F9; /* light gray */
+  --color-border: #334155; /* dark border */
+  --color-danger: #DA4848; /* alert/critical (same) */
   --color-muted: #94A3B8;
 }
 
 /* Smooth transitions for theme switching */
 * {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 /* Custom scrollbar styling */
@@ -58,16 +57,12 @@
   --tw-ring-color: var(--color-primary);
 }
 
-.focus-ring-accent {
-  --tw-ring-color: var(--color-accent);
+.focus-ring-secondary {
+  --tw-ring-color: var(--color-secondary);
 }
 
 .focus-ring-danger {
   --tw-ring-color: var(--color-danger);
-}
-
-.focus-ring-warning {
-  --tw-ring-color: var(--color-warning);
 }
 
 /* Animation utilities */
@@ -105,15 +100,15 @@
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .animate-slide-in {
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn 0.2s ease-out;
 }
 
 .animate-scale-in {
-  animation: scaleIn 0.3s ease-out;
+  animation: scaleIn 0.2s ease-out;
 }
 
 /* Glass morphism effects */
@@ -127,25 +122,33 @@
   border: 1px solid var(--color-border / 0.2);
 }
 
-/* Gradient utilities */
+/* Gradient utilities with custom colors */
 .gradient-primary {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
 }
 
 .gradient-primary-text {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Shadow utilities with theme support */
+/* Shadow utilities with custom colors */
+.shadow-soft {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-medium {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
 .shadow-glow {
   box-shadow: 0 0 20px var(--color-primary / 0.3);
 }
 
-.shadow-glow-accent {
-  box-shadow: 0 0 20px var(--color-accent / 0.3);
+.shadow-glow-secondary {
+  box-shadow: 0 0 20px var(--color-secondary / 0.3);
 }
 
 /* Hover effects */
@@ -169,7 +172,7 @@
 
 /* Card hover effects */
 .card-hover {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card-hover:hover {
@@ -181,6 +184,11 @@
 ::selection {
   background: var(--color-primary / 0.2);
   color: var(--color-text);
+}
+
+/* Beige background utility */
+.bg-beige {
+  background-color: #F5F5DC;
 }
 
 /* Print styles */

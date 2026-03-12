@@ -5,9 +5,10 @@ import Button from './ui/Button'
 import Toggle from './ui/Toggle'
 
 /**
- * Modern Navigation Bar - Figma-style design system
+ * Modern Navigation Bar - Custom Color Palette
  * Features theme toggle, backdrop blur, and responsive design
  * Clean, minimal interface with smooth animations
+ * Uses custom colors: Primary (#76D2DB), Secondary (#D6A99D)
  */
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -28,8 +29,9 @@ const Navbar = () => {
   return (
     <nav className={`
       sticky top-0 z-50 backdrop-blur-lg border-b border-border
-      ${isLight ? 'bg-white/80' : 'bg-surface/80'}
-      transition-all duration-300 ease-out
+      ${isLight ? 'bg-white/90' : 'bg-surface/90'}
+      transition-all duration-200 ease-out
+      rounded-b-2xl shadow-soft
     `}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
@@ -38,13 +40,13 @@ const Navbar = () => {
             <Link to="/" className="flex items-center space-x-3 group">
               <div className={`
                 w-10 h-10 rounded-xl flex items-center justify-center
-                transition-all duration-300 ease-out
-                group-hover:scale-105 group-hover:shadow-lg
+                transition-all duration-200 ease-out
+                group-hover:scale-105 shadow-soft hover:shadow-medium
                 ${isLight ? 'bg-primary' : 'bg-primary/20'}
               `}>
                 <span className={`
                   font-bold text-lg transition-colors
-                  ${isLight ? 'text-white' : 'text-primary'}
+                  ${isLight ? 'text-text' : 'text-primary'}
                 `}>
                   CS
                 </span>
@@ -75,7 +77,7 @@ const Navbar = () => {
             
             {/* Theme Toggle */}
             <div className="flex items-center space-x-3 pl-4 border-l border-border">
-              <span className="text-sm text-muted">
+              <span className="text-sm text-text">
                 {isLight ? '☀️' : '🌙'}
               </span>
               <Toggle
@@ -120,9 +122,9 @@ const Navbar = () => {
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
           <div className={`
-            md:hidden border-t border-border py-2
-            ${isLight ? 'bg-white' : 'bg-surface'}
-            transition-all duration-300 ease-out
+            md:hidden border-t border-border py-2 rounded-b-2xl
+            ${isLight ? 'bg-white/95' : 'bg-surface/95'}
+            transition-all duration-200 ease-out
           `}>
             <div className="space-y-1">
               {navLinks.map((link) => (

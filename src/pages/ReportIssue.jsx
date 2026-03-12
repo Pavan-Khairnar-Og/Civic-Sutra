@@ -309,8 +309,8 @@ const ReportIssue = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-primary/10 to-accent/10 border-b border-border">
+      {/* Header - Modern with Custom Colors */}
+      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-3xl sm:text-4xl font-bold text-text mb-4">
@@ -327,12 +327,12 @@ const ReportIssue = () => {
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Success Message */}
         {success && (
-          <Card className="mb-6 border-accent/20 bg-accent/10">
+          <Card className="mb-6 border-secondary/20 bg-secondary/10">
             <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center mr-4">
-                <span className="text-accent">✅</span>
+              <div className="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center mr-4">
+                <span className="text-secondary">✅</span>
               </div>
-              <p className="text-accent font-medium">{success}</p>
+              <p className="text-secondary font-medium">{success}</p>
             </div>
           </Card>
         )}
@@ -370,7 +370,7 @@ const ReportIssue = () => {
               <div className={`
                 relative rounded-2xl overflow-hidden mb-6 border-2 border-dashed border-border
                 ${isLight ? 'bg-muted/20' : 'bg-muted/10'}
-                transition-all duration-300
+                transition-all duration-200
               `} style={{ minHeight: '320px' }}>
                 {isCapturing ? (
                   <video
@@ -421,7 +421,7 @@ const ReportIssue = () => {
                 {isCapturing && (
                   <>
                     <Button 
-                      variant="success" 
+                      variant="primary" 
                       onClick={capturePhoto}
                       disabled={isLoading}
                       loading={isLoading}
@@ -444,7 +444,7 @@ const ReportIssue = () => {
                 {capturedImage && (
                   <>
                     <Button 
-                      variant="warning" 
+                      variant="secondary" 
                       onClick={retakePhoto}
                       fullWidth={true}
                       className="sm:flex-1 py-4"
@@ -472,7 +472,7 @@ const ReportIssue = () => {
           <Card hover={true} className="group">
             <Card.Header>
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
                   <span className="text-2xl">🎤</span>
                 </div>
                 <div>
@@ -497,7 +497,7 @@ const ReportIssue = () => {
           <Card hover={true} className="group">
             <Card.Header>
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-2xl bg-warning/10 flex items-center justify-center group-hover:bg-warning/20 transition-colors">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                   <span className="text-2xl">📝</span>
                 </div>
                 <div>
@@ -568,7 +568,7 @@ const ReportIssue = () => {
                 disabled={isLoading || !description.trim() || !location.latitude}
                 loading={isLoading}
                 fullWidth={true}
-                className="text-lg py-6 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                className="text-lg py-6 shadow-soft hover:shadow-medium transform hover:scale-105 transition-all duration-200"
               >
                 {isLoading ? 'Submitting...' : '🚀 Submit Issue Report'}
               </Button>

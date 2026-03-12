@@ -1,7 +1,7 @@
 import React from 'react'
 
 /**
- * Modern Input Component - Figma-style design system
+ * Modern Input Component - Custom Color Palette
  * Clean, minimal inputs with smooth animations and theme support
  * Consistent styling for text inputs, textareas, and selects
  */

@@ -6,33 +6,34 @@ import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 
 /**
- * Home page component - Modern Figma-style design system
+ * Home page component - Custom Color Palette
  * Clean, minimal landing page with smooth animations
  * Features theme support and modern SaaS-like interface
+ * Uses custom colors: Primary (#76D2DB), Secondary (#D6A99D), Beige background
  */
 const Home = () => {
   const { isLight, isDark } = useTheme()
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section - Modern Gradient */}
+      {/* Hero Section - Modern with Custom Colors */}
       <section className={`
         relative overflow-hidden py-20 px-4 sm:py-24 sm:px-6 lg:py-32 lg:px-8
         ${isLight 
-          ? 'bg-gradient-to-br from-primary/5 via-white to-accent/5' 
-          : 'bg-gradient-to-br from-primary/10 via-surface to-accent/10'
+          ? 'bg-gradient-to-br from-primary/10 via-beige to-secondary/10' 
+          : 'bg-gradient-to-br from-primary/10 via-surface to-secondary/10'
         }
       `}>
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden">
           <div className={`
             absolute -top-40 -right-40 w-80 h-80 rounded-full
-            ${isLight ? 'bg-primary/10' : 'bg-primary/20'}
+            ${isLight ? 'bg-primary/15' : 'bg-primary/25'}
             blur-3xl
           `}></div>
           <div className={`
             absolute -bottom-40 -left-40 w-80 h-80 rounded-full
-            ${isLight ? 'bg-accent/10' : 'bg-accent/20'}
+            ${isLight ? 'bg-secondary/15' : 'bg-secondary/25'}
             blur-3xl
           `}></div>
         </div>
@@ -43,34 +44,34 @@ const Home = () => {
             <div className="inline-flex items-center space-x-3 mb-6">
               <div className={`
                 w-16 h-16 rounded-2xl flex items-center justify-center
-                shadow-lg transform hover:scale-105 transition-all duration-300
+                shadow-soft transform hover:scale-105 transition-all duration-200
                 ${isLight ? 'bg-primary' : 'bg-primary/20'}
               `}>
                 <span className={`
                   font-bold text-2xl transition-colors
-                  ${isLight ? 'text-white' : 'text-primary'}
+                  ${isLight ? 'text-text' : 'text-primary'}
                 `}>
                   CS
                 </span>
               </div>
               <h1 className={`
                 text-5xl sm:text-6xl lg:text-7xl font-bold
-                bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent
-                transition-all duration-300
+                bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent
+                transition-all duration-200
               `}>
                 Civic Sutra
               </h1>
             </div>
             <div className={`
               w-24 h-1 mx-auto rounded-full
-              ${isLight ? 'bg-gradient-to-r from-primary to-accent' : 'bg-gradient-to-r from-primary/50 to-accent/50'}
+              ${isLight ? 'bg-gradient-to-r from-primary to-secondary' : 'bg-gradient-to-r from-primary/70 to-secondary/70'}
             `}></div>
           </div>
           
           {/* Short Description */}
           <p className={`
             text-lg sm:text-xl lg:text-2xl text-text/80 max-w-3xl mx-auto leading-relaxed mb-12
-            transition-all duration-300
+            transition-all duration-200
           `}>
             Report and track civic issues in your community. 
             <span className="font-semibold text-primary">Together, we can make our neighborhoods better.</span>
@@ -83,7 +84,7 @@ const Home = () => {
                 variant="primary" 
                 size="lg" 
                 fullWidth={true}
-                className="text-lg sm:text-xl py-4 sm:py-4 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                className="text-lg sm:text-xl py-4 sm:py-4 shadow-soft hover:shadow-medium transform hover:scale-105 transition-all duration-200"
               >
                 📝 Report Issue
               </Button>
@@ -93,7 +94,7 @@ const Home = () => {
                 variant="secondary" 
                 size="lg" 
                 fullWidth={true}
-                className="text-lg sm:text-xl py-4 sm:py-4 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                className="text-lg sm:text-xl py-4 sm:py-4 shadow-soft hover:shadow-medium transform hover:scale-105 transition-all duration-200"
               >
                 🗺️ View Map
               </Button>
@@ -103,7 +104,7 @@ const Home = () => {
                 variant="outline" 
                 size="lg" 
                 fullWidth={true}
-                className="text-lg sm:text-xl py-4 sm:py-4 transform hover:scale-105 transition-all duration-300"
+                className="text-lg sm:text-xl py-4 sm:py-4 transform hover:scale-105 transition-all duration-200"
               >
                 📋 My Reports
               </Button>
@@ -128,7 +129,7 @@ const Home = () => {
             <Card hover={true} className="text-center group">
               <div className={`
                 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6
-                bg-primary/10 group-hover:bg-primary/20 transition-all duration-300
+                bg-primary/10 group-hover:bg-primary/20 transition-all duration-200
                 group-hover:scale-110 transform
               `}>
                 <span className="text-3xl">📸</span>
@@ -142,7 +143,7 @@ const Home = () => {
             <Card hover={true} className="text-center group">
               <div className={`
                 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6
-                bg-accent/10 group-hover:bg-accent/20 transition-all duration-300
+                bg-secondary/10 group-hover:bg-secondary/20 transition-all duration-200
                 group-hover:scale-110 transform
               `}>
                 <span className="text-3xl">📍</span>
@@ -156,7 +157,7 @@ const Home = () => {
             <Card hover={true} className="text-center group">
               <div className={`
                 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6
-                bg-warning/10 group-hover:bg-warning/20 transition-all duration-300
+                bg-primary/10 group-hover:bg-primary/20 transition-all duration-200
                 group-hover:scale-110 transform
               `}>
                 <span className="text-3xl">🤖</span>
@@ -188,17 +189,17 @@ const Home = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               { icon: '🚗', title: 'Potholes', description: 'Damaged roads', color: 'danger' },
-              { icon: '🗑️', title: 'Garbage', description: 'Waste issues', color: 'warning' },
+              { icon: '🗑️', title: 'Garbage', description: 'Waste issues', color: 'secondary' },
               { icon: '💧', title: 'Water Leakage', description: 'Pipe problems', color: 'primary' },
-              { icon: '💡', title: 'Streetlights', description: 'Broken lights', color: 'warning' },
-              { icon: '🌳', title: 'Trees', description: 'Tree maintenance', color: 'accent' },
+              { icon: '💡', title: 'Streetlights', description: 'Broken lights', color: 'secondary' },
+              { icon: '🌳', title: 'Trees', description: 'Tree maintenance', color: 'primary' },
               { icon: '🚦', title: 'Traffic Signals', description: 'Traffic lights', color: 'danger' },
               { icon: '🏗️', title: 'Construction', description: 'Unsafe sites', color: 'primary' },
-              { icon: '🔌', title: 'Power Issues', description: 'Electrical problems', color: 'warning' }
+              { icon: '🔌', title: 'Power Issues', description: 'Electrical problems', color: 'secondary' }
             ].map((issue, index) => (
               <Card key={index} hover={true} className="text-center p-6 group">
                 <div className={`
-                  text-3xl mb-4 group-hover:scale-110 transform transition-all duration-300
+                  text-3xl mb-4 group-hover:scale-110 transform transition-all duration-200
                 `}>
                   {issue.icon}
                 </div>
@@ -227,7 +228,7 @@ const Home = () => {
           
           <div className="grid md:grid-cols-3 gap-8">
             <Card hover={true} className="text-center p-8 group">
-              <div className="text-4xl sm:text-5xl font-bold mb-2 text-primary group-hover:scale-110 transform transition-all duration-300">
+              <div className="text-4xl sm:text-5xl font-bold mb-2 text-primary group-hover:scale-110 transform transition-all duration-200">
                 1,234
               </div>
               <div className="text-text/60 font-medium">Issues Reported</div>
@@ -237,7 +238,7 @@ const Home = () => {
             </Card>
             
             <Card hover={true} className="text-center p-8 group">
-              <div className="text-4xl sm:text-5xl font-bold mb-2 text-accent group-hover:scale-110 transform transition-all duration-300">
+              <div className="text-4xl sm:text-5xl font-bold mb-2 text-secondary group-hover:scale-110 transform transition-all duration-200">
                 856
               </div>
               <div className="text-text/60 font-medium">Issues Resolved</div>
@@ -247,7 +248,7 @@ const Home = () => {
             </Card>
             
             <Card hover={true} className="text-center p-8 group">
-              <div className="text-4xl sm:text-5xl font-bold mb-2 text-warning group-hover:scale-110 transform transition-all duration-300">
+              <div className="text-4xl sm:text-5xl font-bold mb-2 text-primary group-hover:scale-110 transform transition-all duration-200">
                 92%
               </div>
               <div className="text-text/60 font-medium">Resolution Rate</div>
@@ -263,7 +264,7 @@ const Home = () => {
       <section className="py-16 px-4 sm:py-20 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <Card className="p-12 text-center group">
-            <h2 className="text-3xl sm:text-4xl font-bold text-text mb-6 group-hover:scale-105 transform transition-all duration-300">
+            <h2 className="text-3xl sm:text-4xl font-bold text-text mb-6 group-hover:scale-105 transform transition-all duration-200">
               Ready to Make a Difference?
             </h2>
             <p className="text-lg text-text/60 mb-8 max-w-2xl mx-auto">
@@ -273,7 +274,7 @@ const Home = () => {
               <Button 
                 variant="primary" 
                 size="lg" 
-                className="text-lg sm:text-xl px-8 sm:px-12 py-4 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                className="text-lg sm:text-xl px-8 sm:px-12 py-4 shadow-soft hover:shadow-medium transform hover:scale-105 transition-all duration-200"
               >
                 Start Reporting Now
               </Button>

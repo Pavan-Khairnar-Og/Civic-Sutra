@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 
 /**
- * Theme Context Provider
- * Manages global theme state (light/dark mode)
+ * Theme Context Provider - Custom Color Palette
+ * Manages global theme state (light/dark mode) with custom colors
  * Stores preference in localStorage
  * Applies theme classes to document body
  */
@@ -21,28 +21,26 @@ export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState('light')
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Theme configurations
+  // Custom theme configurations
   const themes = {
     light: {
-      background: '#F8FAFC',
-      surface: '#FFFFFF',
-      primary: '#3B82F6',
-      accent: '#22C55E',
-      text: '#0F172A',
-      border: '#E2E8F0',
-      warning: '#F59E0B',
-      danger: '#EF4444',
-      muted: '#64748B'
+      background: '#F5F5DC', // beige
+      surface: '#FFFFFF', // white
+      primary: '#76D2DB', // primary accent
+      secondary: '#D6A99D', // soft highlight
+      text: '#1F2937', // dark gray
+      border: '#E5E7EB', // light gray
+      danger: '#DA4848', // alert/critical
+      muted: '#6B7280'
     },
     dark: {
-      background: '#0F172A',
-      surface: '#1E293B',
-      primary: '#60A5FA',
-      accent: '#34D399',
-      text: '#F1F5F9',
-      border: '#334155',
-      warning: '#F59E0B',
-      danger: '#EF4444',
+      background: '#0F172A', // dark blue
+      surface: '#1E293B', // dark blue lighter
+      primary: '#76D2DB', // primary accent (same)
+      secondary: '#D6A99D', // soft highlight (same)
+      text: '#F1F5F9', // light gray
+      border: '#334155', // dark border
+      danger: '#DA4848', // alert/critical (same)
       muted: '#94A3B8'
     }
   }
@@ -66,7 +64,11 @@ export const ThemeProvider = ({ children }) => {
     
     // Remove existing theme classes
     body.classList.remove('light', 'dark')
+    root.classList.remove('light', 'dark')
+    
+    // Add current theme class to both html and body
     body.classList.add(theme)
+    root.classList.add(theme)
     
     // Set CSS custom properties
     const colors = themes[theme]
