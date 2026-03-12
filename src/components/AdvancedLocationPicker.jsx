@@ -338,7 +338,7 @@ const AdvancedLocationPicker = ({ onLocationChange, initialLocation }) => {
       )}
 
       {/* Map Container */}
-      <div className="bg-gray-100 rounded-lg overflow-hidden" style={{ height: '400px', width: '100%' }}>
+      <div className="bg-gray-100 rounded-lg overflow-hidden relative map-container" style={{ height: '400px', width: '100%' }}>
         <div
           ref={mapRef}
           className="w-full h-full"
