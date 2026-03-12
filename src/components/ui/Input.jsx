@@ -1,9 +1,9 @@
 import React from 'react'
 
 /**
- * Reusable Input Component
+ * Modern Input Component - Figma-style design system
+ * Clean, minimal inputs with smooth animations and theme support
  * Consistent styling for text inputs, textareas, and selects
- * Mobile-friendly with proper focus states
  */
 const Input = ({ 
   type = 'text',
@@ -17,9 +17,18 @@ const Input = ({
   containerClassName = '',
   ...props 
 }) => {
-  const baseStyles = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed'
+  const baseStyles = `
+    w-full px-4 py-3 rounded-xl border transition-all duration-200 ease-out
+    focus:outline-none focus:ring-2 focus:ring-offset-2
+    bg-surface text-text placeholder-muted
+    border-border focus:border-primary focus:ring-primary/20
+    disabled:bg-muted disabled:cursor-not-allowed
+    transform active:scale-[0.98]
+  `
   
-  const errorStyles = error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
+  const errorStyles = error 
+    ? 'border-danger focus:border-danger focus:ring-danger/20' 
+    : ''
   
   const combinedStyles = `${baseStyles} ${errorStyles} ${className}`.trim().replace(/\s+/g, ' ')
 
@@ -28,9 +37,9 @@ const Input = ({
   return (
     <div className={containerStyles}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-text">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-danger ml-1">*</span>}
         </label>
       )}
       
@@ -43,11 +52,16 @@ const Input = ({
       />
       
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-danger flex items-center">
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {error}
+        </p>
       )}
       
       {helperText && !error && (
-        <p className="text-sm text-gray-500">{helperText}</p>
+        <p className="text-sm text-muted">{helperText}</p>
       )}
     </div>
   )
@@ -68,9 +82,18 @@ Input.Textarea = ({
   containerClassName = '',
   ...props 
 }) => {
-  const baseStyles = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed resize-none'
+  const baseStyles = `
+    w-full px-4 py-3 rounded-xl border transition-all duration-200 ease-out
+    focus:outline-none focus:ring-2 focus:ring-offset-2 resize-none
+    bg-surface text-text placeholder-muted
+    border-border focus:border-primary focus:ring-primary/20
+    disabled:bg-muted disabled:cursor-not-allowed
+    transform active:scale-[0.98]
+  `
   
-  const errorStyles = error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
+  const errorStyles = error 
+    ? 'border-danger focus:border-danger focus:ring-danger/20' 
+    : ''
   
   const combinedStyles = `${baseStyles} ${errorStyles} ${className}`.trim().replace(/\s+/g, ' ')
 
@@ -79,9 +102,9 @@ Input.Textarea = ({
   return (
     <div className={containerStyles}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-text">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-danger ml-1">*</span>}
         </label>
       )}
       
@@ -94,11 +117,16 @@ Input.Textarea = ({
       />
       
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-danger flex items-center">
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {error}
+        </p>
       )}
       
       {helperText && !error && (
-        <p className="text-sm text-gray-500">{helperText}</p>
+        <p className="text-sm text-muted">{helperText}</p>
       )}
     </div>
   )
@@ -119,9 +147,18 @@ Input.Select = ({
   containerClassName = '',
   ...props 
 }) => {
-  const baseStyles = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed'
+  const baseStyles = `
+    w-full px-4 py-3 rounded-xl border transition-all duration-200 ease-out
+    focus:outline-none focus:ring-2 focus:ring-offset-2
+    bg-surface text-text
+    border-border focus:border-primary focus:ring-primary/20
+    disabled:bg-muted disabled:cursor-not-allowed
+    transform active:scale-[0.98]
+  `
   
-  const errorStyles = error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
+  const errorStyles = error 
+    ? 'border-danger focus:border-danger focus:ring-danger/20' 
+    : ''
   
   const combinedStyles = `${baseStyles} ${errorStyles} ${className}`.trim().replace(/\s+/g, ' ')
 
@@ -130,9 +167,9 @@ Input.Select = ({
   return (
     <div className={containerStyles}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-text">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-danger ml-1">*</span>}
         </label>
       )}
       
@@ -152,11 +189,16 @@ Input.Select = ({
       </select>
       
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-danger flex items-center">
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {error}
+        </p>
       )}
       
       {helperText && !error && (
-        <p className="text-sm text-gray-500">{helperText}</p>
+        <p className="text-sm text-muted">{helperText}</p>
       )}
     </div>
   )

@@ -1,31 +1,36 @@
 import React from 'react'
 
 /**
- * Reusable Card Component
- * Clean, modern card design with subtle shadows and rounded corners
- * Mobile-first responsive design
+ * Modern Card Component - Figma-style design system
+ * Clean, minimal cards with soft shadows and rounded corners
+ * Supports dark/light theme and hover animations
  */
 const Card = ({ 
   children, 
   className = '',
   padding = 'md',
-  shadow = 'md',
+  shadow = 'sm',
   hover = false,
+  border = true,
   ...props 
 }) => {
-  // Base styles
-  const baseStyles = 'bg-white rounded-lg transition-all duration-200'
+  // Base styles with theme-aware colors
+  const baseStyles = `
+    bg-surface rounded-xl transition-all duration-300 ease-out
+    ${border ? 'border border-border' : ''}
+    ${hover ? 'hover:shadow-lg hover:-translate-y-1' : ''}
+  `
   
   // Padding variants
   const paddingStyles = {
     none: '',
-    sm: 'p-3',
-    md: 'p-4',
-    lg: 'p-6',
-    xl: 'p-8'
+    sm: 'p-4',
+    md: 'p-6',
+    lg: 'p-8',
+    xl: 'p-10'
   }
   
-  // Shadow variants
+  // Shadow variants with theme awareness
   const shadowStyles = {
     none: '',
     sm: 'shadow-sm',
@@ -34,14 +39,10 @@ const Card = ({
     xl: 'shadow-xl'
   }
   
-  // Hover effect
-  const hoverStyles = hover ? 'hover:shadow-lg transform hover:-translate-y-1' : ''
-  
   const combinedStyles = `
     ${baseStyles}
     ${paddingStyles[padding]}
     ${shadowStyles[shadow]}
-    ${hoverStyles}
     ${className}
   `.trim().replace(/\s+/g, ' ')
 
@@ -56,7 +57,10 @@ const Card = ({
  * Card Header Component
  */
 Card.Header = ({ children, className = '', ...props }) => {
-  const styles = `border-b border-gray-200 pb-4 mb-4 ${className}`.trim()
+  const styles = `
+    border-b border-border pb-4 mb-4
+    ${className}
+  `.trim()
   return (
     <div className={styles} {...props}>
       {children}
@@ -80,7 +84,10 @@ Card.Body = ({ children, className = '', ...props }) => {
  * Card Footer Component
  */
 Card.Footer = ({ children, className = '', ...props }) => {
-  const styles = `border-t border-gray-200 pt-4 mt-4 ${className}`.trim()
+  const styles = `
+    border-t border-border pt-4 mt-4
+    ${className}
+  `.trim()
   return (
     <div className={styles} {...props}>
       {children}

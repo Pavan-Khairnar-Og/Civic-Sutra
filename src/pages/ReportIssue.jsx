@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTheme } from '../context/ThemeContext'
 import { supabase, storage } from '../services/supabase'
 import SpeechToText from '../components/SpeechToText'
 import AdvancedLocationPicker from '../components/AdvancedLocationPicker'
@@ -9,12 +10,13 @@ import Input from '../components/ui/Input'
 import Badge from '../components/ui/Badge'
 
 /**
- * ReportIssue page component - Modern, mobile-first design
- * Enhanced implementation with camera capture, GPS location detection, voice recording, and Supabase integration
- * Clean, intuitive interface for non-technical users
+ * ReportIssue page component - Modern Figma-style design system
+ * Clean, minimal interface with smooth animations and theme support
+ * Enhanced implementation with camera capture, GPS location detection, voice recording
  */
 const ReportIssue = () => {
   const navigate = useNavigate()
+  const { isLight, isDark } = useTheme()
   
   // State for form data
   const [description, setDescription] = useState('')
@@ -306,78 +308,98 @@ const ReportIssue = () => {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Report a Civic Issue
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Help improve your community by reporting issues. Your voice matters!
-          </p>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-primary/10 to-accent/10 border-b border-border">
+        <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-3xl sm:text-4xl font-bold text-text mb-4">
+              Report a Civic Issue
+            </h1>
+            <p className="text-lg text-text/60 max-w-2xl mx-auto">
+              Help improve your community by reporting issues. Your voice matters!
+            </p>
+          </div>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Success Message */}
         {success && (
-          <Card className="mb-6 border-green-200 bg-green-50">
+          <Card className="mb-6 border-accent/20 bg-accent/10">
             <div className="flex items-center">
-              <span className="text-2xl mr-3">✅</span>
-              <p className="text-green-800 font-medium">{success}</p>
+              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center mr-4">
+                <span className="text-accent">✅</span>
+              </div>
+              <p className="text-accent font-medium">{success}</p>
             </div>
           </Card>
         )}
 
         {/* Error Message */}
         {error && (
-          <Card className="mb-6 border-red-200 bg-red-50">
+          <Card className="mb-6 border-danger/20 bg-danger/10">
             <div className="flex items-center">
-              <span className="text-2xl mr-3">❌</span>
-              <p className="text-red-800 font-medium">{error}</p>
+              <div className="w-10 h-10 rounded-full bg-danger/20 flex items-center justify-center mr-4">
+                <span className="text-danger">❌</span>
+              </div>
+              <p className="text-danger font-medium">{error}</p>
             </div>
           </Card>
         )}
 
-        <div className="space-y-6">
+        {/* Form Sections */}
+        <div className="space-y-8">
           {/* Camera Capture Section */}
-          <Card>
+          <Card hover={true} className="overflow-hidden group">
             <Card.Header>
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                📷 Capture Photo Evidence
-              </h2>
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <span className="text-2xl">📷</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-text">Capture Photo Evidence</h2>
+                  <p className="text-sm text-text/60">Take a clear photo of the issue</p>
+                </div>
+              </div>
             </Card.Header>
             
             <Card.Body>
-              {/* Camera Preview / Captured Image */}
-              <div className="relative bg-gray-100 rounded-lg overflow-hidden mb-4" style={{ minHeight: '280px' }}>
+              {/* Camera Preview */}
+              <div className={`
+                relative rounded-2xl overflow-hidden mb-6 border-2 border-dashed border-border
+                ${isLight ? 'bg-muted/20' : 'bg-muted/10'}
+                transition-all duration-300
+              `} style={{ minHeight: '320px' }}>
                 {isCapturing ? (
-                  // Live camera preview
                   <video
                     ref={videoRef}
                     autoPlay
                     playsInline
                     muted
                     className="w-full h-full object-cover"
-                    style={{ minHeight: '280px' }}
+                    style={{ minHeight: '320px' }}
                   />
                 ) : capturedImage ? (
-                  // Show captured image
                   <img
                     src={capturedImage}
                     alt="Captured issue"
                     className="w-full h-full object-cover"
-                    style={{ minHeight: '280px' }}
+                    style={{ minHeight: '320px' }}
                     onError={(e) => {
                       console.error('Image load error:', e)
                       e.target.src = 'https://via.placeholder.com/400x300?text=Image+Error'
                     }}
                   />
                 ) : (
-                  // Placeholder
-                  <div className="flex items-center justify-center h-full" style={{ minHeight: '280px' }}>
+                  <div className="flex items-center justify-center h-full" style={{ minHeight: '320px' }}>
                     <div className="text-center">
-                      <div className="text-4xl mb-2">📷</div>
-                      <p className="text-gray-500">No photo captured yet</p>
+                      <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                        <span className="text-3xl text-muted">📷</span>
+                      </div>
+                      <p className="text-text/60 font-medium">No photo captured yet</p>
+                      <p className="text-sm text-text/40 mt-2">Click "Start Camera" to begin</p>
                     </div>
                   </div>
                 )}
@@ -390,7 +412,7 @@ const ReportIssue = () => {
                     variant="primary" 
                     onClick={startCamera}
                     fullWidth={true}
-                    className="sm:flex-1"
+                    className="sm:flex-1 py-4"
                   >
                     📸 Start Camera
                   </Button>
@@ -404,7 +426,7 @@ const ReportIssue = () => {
                       disabled={isLoading}
                       loading={isLoading}
                       fullWidth={true}
-                      className="sm:flex-1"
+                      className="sm:flex-1 py-4"
                     >
                       📸 Capture Photo
                     </Button>
@@ -412,7 +434,7 @@ const ReportIssue = () => {
                       variant="outline" 
                       onClick={stopCamera}
                       fullWidth={true}
-                      className="sm:flex-1"
+                      className="sm:flex-1 py-4"
                     >
                       ❌ Cancel
                     </Button>
@@ -425,7 +447,7 @@ const ReportIssue = () => {
                       variant="warning" 
                       onClick={retakePhoto}
                       fullWidth={true}
-                      className="sm:flex-1"
+                      className="sm:flex-1 py-4"
                     >
                       🔄 Retake Photo
                     </Button>
@@ -433,7 +455,7 @@ const ReportIssue = () => {
                       variant="danger" 
                       onClick={deletePhoto}
                       fullWidth={true}
-                      className="sm:flex-1"
+                      className="sm:flex-1 py-4"
                     >
                       🗑️ Delete Photo
                     </Button>
@@ -441,17 +463,23 @@ const ReportIssue = () => {
                 )}
               </div>
 
-              {/* Hidden canvas for image capture */}
+              {/* Hidden canvas */}
               <canvas ref={canvasRef} className="hidden" />
             </Card.Body>
           </Card>
 
-          {/* Speech-to-Text Section */}
-          <Card>
+          {/* Voice Description Section */}
+          <Card hover={true} className="group">
             <Card.Header>
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                🎤 Voice Description
-              </h2>
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                  <span className="text-2xl">🎤</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-text">Voice Description</h2>
+                  <p className="text-sm text-text/60">Speak naturally to describe the issue</p>
+                </div>
+              </div>
             </Card.Header>
             
             <Card.Body>
@@ -466,11 +494,17 @@ const ReportIssue = () => {
           </Card>
 
           {/* Description Input Section */}
-          <Card>
+          <Card hover={true} className="group">
             <Card.Header>
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                📝 Issue Description
-              </h2>
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-2xl bg-warning/10 flex items-center justify-center group-hover:bg-warning/20 transition-colors">
+                  <span className="text-2xl">📝</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-text">Issue Description</h2>
+                  <p className="text-sm text-text/60">Provide detailed information</p>
+                </div>
+              </div>
             </Card.Header>
             
             <Card.Body>
@@ -487,11 +521,17 @@ const ReportIssue = () => {
           </Card>
 
           {/* Location Section */}
-          <Card>
+          <Card hover={true} className="group">
             <Card.Header>
-              <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                📍 Issue Location
-              </h2>
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <span className="text-2xl">📍</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-text">Issue Location</h2>
+                  <p className="text-sm text-text/60">Pinpoint the exact location</p>
+                </div>
+              </div>
             </Card.Header>
             
             <Card.Body>
@@ -501,12 +541,14 @@ const ReportIssue = () => {
               />
               
               {location.latitude && location.longitude && (
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="mt-6 p-4 bg-primary/10 rounded-2xl border border-primary/20">
                   <div className="flex items-center">
-                    <span className="text-blue-600 mr-2">📍</span>
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mr-3">
+                      <span className="text-primary">📍</span>
+                    </div>
                     <div>
-                      <p className="text-sm font-medium text-blue-900">Location Selected</p>
-                      <p className="text-xs text-blue-700 font-mono">
+                      <p className="text-sm font-medium text-primary">Location Selected</p>
+                      <p className="text-xs text-primary/80 font-mono">
                         {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
                       </p>
                     </div>
@@ -517,7 +559,7 @@ const ReportIssue = () => {
           </Card>
 
           {/* Submit Section */}
-          <Card>
+          <Card className="border-primary/20 bg-primary/5">
             <Card.Body>
               <Button 
                 variant="primary" 
@@ -526,13 +568,13 @@ const ReportIssue = () => {
                 disabled={isLoading || !description.trim() || !location.latitude}
                 loading={isLoading}
                 fullWidth={true}
-                className="text-lg py-4"
+                className="text-lg py-6 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
               >
                 {isLoading ? 'Submitting...' : '🚀 Submit Issue Report'}
               </Button>
               
-              <div className="mt-4 text-center">
-                <p className="text-sm text-gray-500">
+              <div className="mt-6 text-center">
+                <p className="text-sm text-text/60">
                   By submitting, you agree to help improve your community
                 </p>
               </div>

@@ -1,9 +1,9 @@
 import React from 'react'
 
 /**
- * Reusable Badge Component
+ * Modern Badge Component - Figma-style design system
+ * Clean, minimal badges with smooth animations and theme support
  * Color-coded badges for status, priority, and categories
- * Mobile-friendly sizing
  */
 const Badge = ({ 
   children, 
@@ -13,49 +13,50 @@ const Badge = ({
   ...props 
 }) => {
   // Base styles
-  const baseStyles = 'inline-flex items-center font-medium rounded-full'
+  const baseStyles = `
+    inline-flex items-center font-medium rounded-full
+    transition-all duration-200 ease-out
+  `
   
   // Size variants
   const sizeStyles = {
     sm: 'px-2 py-1 text-xs',
-    md: 'px-3 py-1 text-sm',
+    md: 'px-3 py-1.5 text-sm',
     lg: 'px-4 py-2 text-base'
   }
   
-  // Color variants
+  // Color variants with theme support
   const variantStyles = {
-    primary: 'bg-blue-100 text-blue-800',
-    secondary: 'bg-green-100 text-green-800',
-    warning: 'bg-orange-100 text-orange-800',
-    danger: 'bg-red-100 text-red-800',
-    success: 'bg-green-100 text-green-800',
-    info: 'bg-blue-100 text-blue-800',
-    gray: 'bg-gray-100 text-gray-800',
-    yellow: 'bg-yellow-100 text-yellow-800',
-    outline: 'border border-gray-300 text-gray-700'
+    primary: 'bg-primary/10 text-primary border border-primary/20',
+    secondary: 'bg-accent/10 text-accent border border-accent/20',
+    warning: 'bg-warning/10 text-warning border border-warning/20',
+    danger: 'bg-danger/10 text-danger border border-danger/20',
+    success: 'bg-accent/10 text-accent border border-accent/20',
+    info: 'bg-primary/10 text-primary border border-primary/20',
+    gray: 'bg-muted/10 text-muted border border-muted/20',
+    outline: 'border border-border text-text',
+    muted: 'bg-muted text-text'
   }
   
   // Priority-specific colors
   const priorityStyles = {
-    critical: 'bg-red-100 text-red-800',
-    high: 'bg-orange-100 text-orange-800',
-    medium: 'bg-yellow-100 text-yellow-800',
-    low: 'bg-green-100 text-green-800'
+    critical: 'bg-danger/10 text-danger border border-danger/20',
+    high: 'bg-warning/10 text-warning border border-warning/20',
+    medium: 'bg-warning/10 text-warning/60 border border-warning/20',
+    low: 'bg-accent/10 text-accent border border-accent/20'
   }
   
   // Status-specific colors
   const statusStyles = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    'in-progress': 'bg-blue-100 text-blue-800',
-    resolved: 'bg-green-100 text-green-800',
-    rejected: 'bg-red-100 text-red-800'
+    pending: 'bg-warning/10 text-warning border border-warning/20',
+    'in-progress': 'bg-primary/10 text-primary border border-primary/20',
+    resolved: 'bg-accent/10 text-accent border border-accent/20',
+    rejected: 'bg-danger/10 text-danger border border-danger/20'
   }
   
   // Choose color scheme
   let colorStyles = variantStyles[variant]
-  if (variantStyles[variant]) {
-    colorStyles = variantStyles[variant]
-  } else if (priorityStyles[variant]) {
+  if (priorityStyles[variant]) {
     colorStyles = priorityStyles[variant]
   } else if (statusStyles[variant]) {
     colorStyles = statusStyles[variant]

@@ -1,0 +1,195 @@
+/**
+ * Global CSS Variables for Theme System
+ * Defines CSS custom properties for light and dark themes
+ * Used by Tailwind CSS for dynamic theming
+ */
+
+/* Light Theme Colors */
+:root {
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-primary: #3B82F6;
+  --color-accent: #22C55E;
+  --color-text: #0F172A;
+  --color-border: #E2E8F0;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-muted: #64748B;
+}
+
+/* Dark Theme Colors */
+.dark {
+  --color-background: #0F172A;
+  --color-surface: #1E293B;
+  --color-primary: #60A5FA;
+  --color-accent: #34D399;
+  --color-text: #F1F5F9;
+  --color-border: #334155;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --color-muted: #94A3B8;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-muted / 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-muted / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted / 0.5);
+}
+
+/* Focus ring styles */
+.focus-ring-primary {
+  --tw-ring-color: var(--color-primary);
+}
+
+.focus-ring-accent {
+  --tw-ring-color: var(--color-accent);
+}
+
+.focus-ring-danger {
+  --tw-ring-color: var(--color-danger);
+}
+
+.focus-ring-warning {
+  --tw-ring-color: var(--color-warning);
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* Glass morphism effects */
+.glass {
+  background: var(--color-surface / 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-border {
+  border: 1px solid var(--color-border / 0.2);
+}
+
+/* Gradient utilities */
+.gradient-primary {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+}
+
+.gradient-primary-text {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Shadow utilities with theme support */
+.shadow-glow {
+  box-shadow: 0 0 20px var(--color-primary / 0.3);
+}
+
+.shadow-glow-accent {
+  box-shadow: 0 0 20px var(--color-accent / 0.3);
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px var(--color-muted / 0.3);
+}
+
+/* Button press effect */
+.button-press {
+  transition: transform 0.1s ease;
+}
+
+.button-press:active {
+  transform: scale(0.95);
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px var(--color-muted / 0.2);
+}
+
+/* Text selection */
+::selection {
+  background: var(--color-primary / 0.2);
+  color: var(--color-text);
+}
+
+/* Print styles */
+@media print {
+  * {
+    transition: none !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+}

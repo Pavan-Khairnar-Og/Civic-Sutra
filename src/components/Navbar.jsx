@@ -1,14 +1,17 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTheme } from '../context/ThemeContext'
 import Button from './ui/Button'
+import Toggle from './ui/Toggle'
 
 /**
- * Navigation bar component - Modern, mobile-first design
- * Provides navigation between different pages of the application
- * Responsive design with mobile menu
+ * Modern Navigation Bar - Figma-style design system
+ * Features theme toggle, backdrop blur, and responsive design
+ * Clean, minimal interface with smooth animations
  */
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { theme, toggleTheme, isLight, isDark } = useTheme()
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -23,16 +26,32 @@ const Navbar = () => {
   ]
 
   return (
-    <nav className="bg-white shadow-md border-b border-gray-200 sticky top-0 z-50">
+    <nav className={`
+      sticky top-0 z-50 backdrop-blur-lg border-b border-border
+      ${isLight ? 'bg-white/80' : 'bg-surface/80'}
+      transition-all duration-300 ease-out
+    `}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">CS</span>
+            <Link to="/" className="flex items-center space-x-3 group">
+              <div className={`
+                w-10 h-10 rounded-xl flex items-center justify-center
+                transition-all duration-300 ease-out
+                group-hover:scale-105 group-hover:shadow-lg
+                ${isLight ? 'bg-primary' : 'bg-primary/20'}
+              `}>
+                <span className={`
+                  font-bold text-lg transition-colors
+                  ${isLight ? 'text-white' : 'text-primary'}
+                `}>
+                  CS
+                </span>
               </div>
-              <span className="text-xl font-bold text-gray-900">Civic Sutra</span>
+              <span className="text-xl font-bold text-text group-hover:text-primary transition-colors">
+                Civic Sutra
+              </span>
             </Link>
           </div>
           
@@ -42,16 +61,43 @@ const Navbar = () => {
               <Link
                 key={link.to}
                 to={link.to}
-                className="text-gray-600 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                className={`
+                  flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium
+                  transition-all duration-200 ease-out
+                  hover:bg-primary/10 hover:text-primary
+                  text-text hover:scale-105
+                `}
               >
-                <span className="mr-1">{link.icon}</span>
-                {link.label}
+                <span className="text-lg">{link.icon}</span>
+                <span>{link.label}</span>
               </Link>
             ))}
+            
+            {/* Theme Toggle */}
+            <div className="flex items-center space-x-3 pl-4 border-l border-border">
+              <span className="text-sm text-muted">
+                {isLight ? '☀️' : '🌙'}
+              </span>
+              <Toggle
+                checked={isDark}
+                onChange={toggleTheme}
+                size="sm"
+              />
+            </div>
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center space-x-3">
+            {/* Mobile Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleTheme}
+              className="p-2"
+            >
+              {isDark ? '🌙' : '☀️'}
+            </Button>
+            
             <Button
               variant="ghost"
               size="sm"
@@ -73,14 +119,23 @@ const Navbar = () => {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-2">
+          <div className={`
+            md:hidden border-t border-border py-2
+            ${isLight ? 'bg-white' : 'bg-surface'}
+            transition-all duration-300 ease-out
+          `}>
             <div className="space-y-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center space-x-3 text-gray-600 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg text-base font-medium transition-colors duration-200"
+                  className={`
+                    flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-medium
+                    transition-all duration-200 ease-out
+                    hover:bg-primary/10 hover:text-primary hover:scale-105
+                    text-text
+                  `}
                 >
                   <span className="text-xl">{link.icon}</span>
                   <span>{link.label}</span>

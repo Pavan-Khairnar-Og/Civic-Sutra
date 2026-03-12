@@ -1,9 +1,9 @@
 import React from 'react'
 
 /**
- * Reusable Button Component
+ * Modern Button Component - Figma-style design system
+ * Clean, minimal buttons with smooth animations and theme support
  * Supports different variants, sizes, and states
- * Mobile-first design with consistent styling
  */
 const Button = ({ 
   children, 
@@ -17,8 +17,13 @@ const Button = ({
   className = '',
   ...props 
 }) => {
-  // Base styles
-  const baseStyles = 'font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2'
+  // Base styles with theme-aware colors
+  const baseStyles = `
+    font-medium rounded-xl transition-all duration-200 ease-out
+    focus:outline-none focus:ring-2 focus:ring-offset-2
+    disabled:cursor-not-allowed disabled:opacity-50
+    transform active:scale-95
+  `
   
   // Size variants
   const sizeStyles = {
@@ -28,15 +33,40 @@ const Button = ({
     xl: 'px-8 py-6 text-xl'
   }
   
-  // Color variants
+  // Color variants with theme support
   const variantStyles = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 disabled:bg-blue-300',
-    secondary: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500 disabled:bg-green-300',
-    warning: 'bg-orange-600 text-white hover:bg-orange-700 focus:ring-orange-500 disabled:bg-orange-300',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 disabled:bg-red-300',
-    outline: 'border-2 border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-blue-500 disabled:border-gray-300 disabled:text-gray-400',
-    ghost: 'text-blue-600 hover:bg-blue-50 focus:ring-blue-500 disabled:text-gray-400',
-    success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500 disabled:bg-green-300'
+    primary: `
+      bg-primary text-white hover:bg-primary/90 focus:ring-primary
+      shadow-sm hover:shadow-md
+    `,
+    secondary: `
+      bg-accent text-white hover:bg-accent/90 focus:ring-accent
+      shadow-sm hover:shadow-md
+    `,
+    warning: `
+      bg-warning text-white hover:bg-warning/90 focus:ring-warning
+      shadow-sm hover:shadow-md
+    `,
+    danger: `
+      bg-danger text-white hover:bg-danger/90 focus:ring-danger
+      shadow-sm hover:shadow-md
+    `,
+    outline: `
+      border-2 border-primary text-primary hover:bg-primary/10 focus:ring-primary
+      bg-transparent
+    `,
+    ghost: `
+      text-primary hover:bg-primary/10 focus:ring-primary
+      bg-transparent
+    `,
+    success: `
+      bg-accent text-white hover:bg-accent/90 focus:ring-accent
+      shadow-sm hover:shadow-md
+    `,
+    muted: `
+      bg-surface text-text hover:bg-surface/80 border border-border
+      shadow-sm hover:shadow-md
+    `
   }
   
   // Width styles
