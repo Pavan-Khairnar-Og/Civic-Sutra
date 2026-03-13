@@ -23,6 +23,7 @@ const Navbar = () => {
     { to: '/report', label: 'Report Issue', icon: '📝' },
     { to: '/my-reports', label: 'My Reports', icon: '📋' },
     { to: '/map', label: 'Map View', icon: '🗺️' },
+    { to: '/ai-vision', label: 'AI Vision', icon: '🤖' },
     { to: '/admin', label: 'Admin', icon: '⚙️' }
   ]
 

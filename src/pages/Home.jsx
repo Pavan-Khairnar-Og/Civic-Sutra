@@ -149,6 +149,20 @@ const Home = () => {
                 </span>
               </Button>
             </Link>
+            <Link to="/ai-vision" className="w-full sm:w-auto group">
+              <Button 
+                variant="outline" 
+                size="lg" 
+                fullWidth={true}
+                className="text-lg sm:text-xl py-4 sm:py-4 transform hover:scale-105 transition-all duration-300 group-hover:rotate-1"
+              >
+                <span className="flex items-center justify-center">
+                  🤖 
+                  <span className="ml-2">AI Vision</span>
+                  <span className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">→</span>
+                </span>
+              </Button>
+            </Link>
             <Link to="/my-reports" className="w-full sm:w-auto group">
               <Button 
                 variant="outline" 
