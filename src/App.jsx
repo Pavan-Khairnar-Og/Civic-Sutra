@@ -8,12 +8,13 @@ import MyReports from './pages/MyReports'
 import MapView from './pages/MapView'
 import AdminDashboard from './pages/AdminDashboard'
 import ImageDetectionPage from './pages/ImageDetectionPage'
+import ImageDetectionTest from './components/ImageDetectionTest'
 
 /**
  * Main App component with routing setup and theme provider
  * This is the entry point for our Civic Sutra application
  * Features modern Figma-style design system with dark/light mode
- * Includes AI Vision Detection feature
+ * Includes AI Vision Detection feature and test tools
  */
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
               <Route path="/map" element={<MapView />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/ai-vision" element={<ImageDetectionPage />} />
+              <Route path="/ai-vision-test" element={<ImageDetectionTest />} />
             </Routes>
           </main>
         </div>
