@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
-import { supabase } from '../services/supabase'
+import { supabase, imageReports } from '../services/supabase'
+import { analyzeIssueImage } from '../services/imageAnalysis'
 import SpeechToText from '../components/SpeechToText'
 import AdvancedLocationPicker from '../components/AdvancedLocationPicker'
 import Button from '../components/ui/Button'
@@ -21,11 +22,21 @@ const ReportIssue = () => {
   // State for form data
   const [description, setDescription] = useState('')
   const [capturedImage, setCapturedImage] = useState(null)
-  const [location, setLocation] = useState({ latitude: null, longitude: null })
+  const [location, setLocation] = useState({ latitude: null, longitude: null, address: null })
   const [voiceTranscript, setVoiceTranscript] = useState('')
+  
+  // State for AI analysis
+  const [aiResult, setAiResult] = useState(null)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  
+  // State for user information
+  const [citizenName, setCitizenName] = useState('')
+  const [citizenEmail, setCitizenEmail] = useState('')
+  const [title, setTitle] = useState('')
   
   // State for UI management
   const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCapturing, setIsCapturing] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -106,15 +117,10 @@ const ReportIssue = () => {
 
   /**
    * Capture photo from video stream
-   * Takes a snapshot from video and converts it to image data
-   * Includes validation and error handling
+   * Takes snapshot from camera and converts to image data
+   * Enhanced with AI analysis integration
    */
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) {
-      setError('Camera not ready. Please try starting the camera again.')
-      return
-    }
-
+  const capturePhoto = async () => {
     const video = videoRef.current
     const canvas = canvasRef.current
     const context = canvas.getContext('2d')
@@ -140,12 +146,49 @@ const ReportIssue = () => {
       // Stop camera after successful capture
       stopCamera()
       
-      setSuccess('Photo captured successfully!')
+      setSuccess('Photo captured successfully! Analyzing with AI...')
       setTimeout(() => setSuccess(''), 3000)
+      
+      // Start AI analysis
+      await analyzeImageWithAI(imageDataUrl)
       
     } catch (error) {
       setError('Failed to capture photo. Please try again.')
       console.error('Photo capture error:', error)
+    }
+  }
+
+  /**
+   * Analyze captured image with Groq AI
+   * @param {string} imageDataUrl - Base64 image data
+   */
+  const analyzeImageWithAI = async (imageDataUrl) => {
+    try {
+      setIsAnalyzing(true)
+      setError('')
+      
+      // Convert data URL to base64 (remove prefix)
+      const base64Data = imageDataUrl.replace(/^data:image\/[a-z]+;base64,/, '')
+      
+      // Analyze with Groq AI
+      const result = await analyzeIssueImage(base64Data, 'image/jpeg')
+      
+      setAiResult(result)
+      
+      // Auto-fill title based on AI result
+      if (result.isValidCivicIssue && result.issueType) {
+        setTitle(`AI Detected: ${result.issueType.charAt(0).toUpperCase() + result.issueType.slice(1)}`)
+      }
+      
+      setSuccess('AI analysis complete! Issue classified successfully.')
+      setTimeout(() => setSuccess(''), 3000)
+      
+    } catch (error) {
+      console.error('AI analysis error:', error)
+      setError('AI analysis failed. You can still submit the report manually.')
+      // Don't block submission if AI fails
+    } finally {
+      setIsAnalyzing(false)
     }
   }
 
@@ -240,9 +283,9 @@ const ReportIssue = () => {
   }
 
   /**
-   * Submit report to Supabase database
+   * Submit report to Supabase database with AI integration
    * Enhanced with comprehensive validation and error handling
-   * Uploads image and saves report data
+   * Uploads image, uses AI analysis, and saves complete report data
    */
   const submitReport = async () => {
     // Enhanced validation with specific error messages
@@ -261,48 +304,71 @@ const ReportIssue = () => {
       return
     }
 
-    setIsLoading(true)
+    setIsSubmitting(true)
     setError('')
 
     try {
-      // Step 1: Upload image to Supabase Storage
-      const imageUrl = await uploadImageToSupabase(capturedImage)
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        throw new Error('Please sign in to submit a report.')
+      }
 
-      // Step 2: Prepare report data with all required fields
+      // Step 1: Convert image data URL to File object
+      const response = await fetch(capturedImage)
+      if (!response.ok) {
+        throw new Error('Failed to process image data')
+      }
+      
+      const blob = await response.blob()
+      const file = new File([blob], 'report-image.jpg', { type: 'image/jpeg' })
+
+      // Step 2: Upload image using new uploadReportImage function
+      const { imageUrl, imagePath } = await imageReports.uploadReportImage(file, user.id)
+
+      // Step 3: Prepare complete report data with AI results
       const reportData = {
-        image_url: imageUrl,
+        userId: user.id,
+        citizenName: citizenName.trim() || null,
+        citizenEmail: citizenEmail.trim() || user.email,
+        title: title.trim() || (aiResult?.isValidCivicIssue 
+          ? `AI Detected: ${aiResult.issueType.charAt(0).toUpperCase() + aiResult.issueType.slice(1)}`
+          : 'Civic Issue Report'),
         description: voiceTranscript.trim() || description.trim(),
-        latitude: location.latitude,
-        longitude: location.longitude,
-        status: 'pending',
-        created_at: new Date().toISOString()
+        location: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          address: location.address || null
+        },
+        imageUrl,
+        imagePath,
+        aiResult: aiResult || {
+          issueType: 'other',
+          confidence: 0,
+          severity: 'low',
+          description: description.trim() || 'No description provided',
+          suggestedDepartment: 'Other',
+          isValidCivicIssue: false,
+          reasoning: 'No AI analysis available'
+        }
       }
 
-      console.log('Submitting report:', reportData)
+      console.log('Submitting report with data:', reportData)
 
-      // Step 3: Save report data to Supabase database
-      const { data, error: insertError } = await supabase
-        .from('reports')
-        .insert([reportData])
-        .select()
+      // Step 4: Save complete report using new saveReport function
+      const savedReport = await imageReports.saveReport(reportData)
 
-      if (insertError) {
-        throw insertError
-      }
-
-      // Success! Navigate to reports page
+      // Success! Navigate to my-reports with success parameter
       setSuccess('Report submitted successfully! Your civic issue has been recorded.')
       setTimeout(() => {
-        navigate('/my-reports', { 
-          state: { message: 'Issue reported successfully!' }
-        })
+        navigate('/my-reports?success=' + savedReport.id)
       }, 2000)
 
     } catch (error) {
       console.error('Submit error:', error)
       setError(error.message || 'Failed to submit report. Please try again.')
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -317,7 +383,15 @@ const ReportIssue = () => {
     setError('')
     setSuccess('')
     stopCamera()
-    setLocation({ latitude: null, longitude: null })
+    setLocation({ latitude: null, longitude: null, address: null })
+    
+    // Reset new state variables
+    setAiResult(null)
+    setIsAnalyzing(false)
+    setCitizenName('')
+    setCitizenEmail('')
+    setTitle('')
+    setIsSubmitting(false)
   }
 
   /**
@@ -330,10 +404,12 @@ const ReportIssue = () => {
 
   /**
    * Retake photo
-   * Clears current image and restarts camera
+   * Clears current image, AI results, and restarts camera
    */
   const retakePhoto = () => {
     setCapturedImage(null)
+    setAiResult(null)
+    setTitle('')
     setError('')
     setSuccess('')
     startCamera()
@@ -341,10 +417,12 @@ const ReportIssue = () => {
 
   /**
    * Delete photo
-   * Clears current image without restarting camera
+   * Clears current image and AI results without restarting camera
    */
   const deletePhoto = () => {
     setCapturedImage(null)
+    setAiResult(null)
+    setTitle('')
     setError('')
     setSuccess('')
   }
@@ -571,6 +649,148 @@ const ReportIssue = () => {
             </Card.Body>
           </Card>
 
+          {/* Citizen Information Section */}
+          <Card hover={true} className="group">
+            <Card.Header>
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
+                  <span className="text-2xl">👤</span>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-text">Your Information</h2>
+                  <p className="text-sm text-text/60">Optional contact details</p>
+                </div>
+              </div>
+            </Card.Header>
+            
+            <Card.Body>
+              <div className="grid md:grid-cols-2 gap-6">
+                <Input
+                  label="Your Name (Optional)"
+                  placeholder="John Doe"
+                  value={citizenName}
+                  onChange={(e) => setCitizenName(e.target.value)}
+                  helperText="Helps us follow up on your report"
+                />
+                
+                <Input
+                  label="Email (Optional)"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={citizenEmail}
+                  onChange={(e) => setCitizenEmail(e.target.value)}
+                  helperText="For status updates and notifications"
+                />
+              </div>
+            </Card.Body>
+          </Card>
+
+          {/* AI Analysis Results Section */}
+          {aiResult && (
+            <Card className="border-success/20 bg-success/5">
+              <Card.Header>
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-2xl bg-success/10 flex items-center justify-center">
+                    <span className="text-2xl">🤖</span>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-text">AI Analysis Results</h2>
+                    <p className="text-sm text-text/60">Issue automatically classified</p>
+                  </div>
+                </div>
+              </Card.Header>
+              
+              <Card.Body>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-medium text-text mb-3">Issue Classification</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center p-3 bg-muted/10 rounded-lg">
+                        <span className="text-sm font-medium">Type:</span>
+                        <Badge variant={aiResult.isValidCivicIssue ? 'success' : 'muted'}>
+                          {aiResult.issueType}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted/10 rounded-lg">
+                        <span className="text-sm font-medium">Severity:</span>
+                        <Badge variant={
+                          aiResult.severity === 'critical' ? 'danger' :
+                          aiResult.severity === 'high' ? 'warning' :
+                          aiResult.severity === 'medium' ? 'primary' : 'success'
+                        }>
+                          {aiResult.severity}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted/10 rounded-lg">
+                        <span className="text-sm font-medium">Department:</span>
+                        <Badge variant="outline">
+                          {aiResult.suggestedDepartment}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium text-text mb-3">Analysis Details</h3>
+                    <div className="space-y-2">
+                      <div className="p-3 bg-muted/10 rounded-lg">
+                        <span className="text-sm font-medium">Confidence:</span>
+                        <div className="flex items-center mt-1">
+                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-success transition-all duration-500"
+                              style={{ width: `${aiResult.confidence * 100}%` }}
+                            ></div>
+                          </div>
+                          <span className="ml-2 text-sm text-success font-medium">
+                            {Math.round(aiResult.confidence * 100)}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="p-3 bg-muted/10 rounded-lg">
+                        <span className="text-sm font-medium">AI Description:</span>
+                        <p className="text-sm text-text/80 mt-1">{aiResult.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {aiResult.reasoning && (
+                  <div className="mt-4 p-3 bg-primary/10 rounded-lg">
+                    <h4 className="text-sm font-medium text-primary mb-1">AI Reasoning:</h4>
+                    <p className="text-sm text-primary/80">{aiResult.reasoning}</p>
+                  </div>
+                )}
+                
+                <div className="mt-4 p-3 bg-warning/10 rounded-lg">
+                  <div className="flex items-center">
+                    <span className="text-warning mr-2">💡</span>
+                    <p className="text-sm text-warning/80">
+                      This AI analysis helps us route your report to the right department and prioritize it accordingly.
+                    </p>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          )}
+
+          {/* AI Analysis Loading */}
+          {isAnalyzing && (
+            <Card className="border-primary/20 bg-primary/5">
+              <Card.Body>
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl animate-pulse">🤖</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-text mb-2">Analyzing with AI...</h3>
+                    <p className="text-sm text-text/60">Our AI is analyzing your image to classify the issue</p>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          )}
+
           {/* Location Section */}
           <Card hover={true} className="group">
             <Card.Header>
@@ -616,12 +836,12 @@ const ReportIssue = () => {
                 variant="primary" 
                 size="lg"
                 onClick={handleSubmit}
-                disabled={isLoading || !description.trim() || !location.latitude}
-                loading={isLoading}
+                disabled={isSubmitting || isAnalyzing || !description.trim() || !location.latitude}
+                loading={isSubmitting}
                 fullWidth={true}
                 className="text-lg py-6 shadow-soft hover:shadow-medium transform hover:scale-105 transition-all duration-200"
               >
-                {isLoading ? 'Submitting...' : '🚀 Submit Issue Report'}
+                {isSubmitting ? 'Submitting...' : isAnalyzing ? 'Analyzing...' : '🚀 Submit Issue Report'}
               </Button>
               
               <div className="mt-6 text-center">

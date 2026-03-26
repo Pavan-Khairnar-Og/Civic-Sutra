@@ -180,6 +180,23 @@ export const reports = {
   },
 
   /**
+   * Update report status
+   * @param {string} reportId - Report ID
+   * @param {string} status - New status
+   */
+  updateStatus: async (reportId, status) => {
+    const { data, error } = await supabase
+      .from('reports')
+      .update({
+        status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', reportId)
+      .select()
+    return { data, error }
+  },
+
+  /**
    * Delete a report
    * @param {string} reportId - Report ID
    */
@@ -189,6 +206,292 @@ export const reports = {
       .delete()
       .eq('id', reportId)
     return { error }
+  }
+}
+
+/**
+ * Image upload and report creation functions
+ */
+export const imageReports = {
+  /**
+   * Upload report image to Supabase Storage
+   * @param {File} file - Image file to upload
+   * @param {string} userId - User ID for folder structure
+   * @returns {Promise<Object>} Object containing imageUrl and imagePath
+   */
+  uploadReportImage: async (file, userId) => {
+    try {
+      if (!file) {
+        throw new Error('No file provided for upload')
+      }
+
+      if (!userId) {
+        throw new Error('User ID is required for image upload')
+      }
+
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${userId}/${Date.now()}.${fileExt}`
+      const filePath = `reports/${fileName}`
+
+      console.log('Uploading image:', filePath)
+
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('report-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        throw new Error(`Image upload failed: ${uploadError.message}`)
+      }
+
+      console.log('Upload successful:', uploadData)
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('report-images')
+        .getPublicUrl(filePath)
+
+      if (!urlData?.publicUrl) {
+        throw new Error('Failed to get public URL for uploaded image')
+      }
+
+      return {
+        imageUrl: urlData.publicUrl,
+        imagePath: filePath
+      }
+
+    } catch (error) {
+      console.error('Image upload error:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Save complete report with AI analysis results
+   * @param {object} reportData - Complete report data including AI results
+   * @returns {Promise<Object>} Created report data
+   */
+  saveReport: async ({
+    userId,
+    citizenName,
+    citizenEmail,
+    title,
+    description,
+    location,
+    imageUrl,
+    imagePath,
+    aiResult
+  }) => {
+    try {
+      if (!userId) {
+        throw new Error('User ID is required')
+      }
+
+      if (!imageUrl || !imagePath) {
+        throw new Error('Image URL and path are required')
+      }
+
+      if (!aiResult) {
+        throw new Error('AI analysis result is required')
+      }
+
+      const reportData = {
+        user_id: userId,
+        citizen_name: citizenName || null,
+        citizen_email: citizenEmail || null,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        address: location.address || null,
+        title: title || `AI Detected: ${aiResult.issueType}`,
+        description: description || aiResult.description,
+        issue_type: aiResult.issueType,
+        ai_issue_type: aiResult.issueType,
+        ai_department: aiResult.suggestedDepartment,
+        ai_severity: aiResult.severity,
+        ai_description: aiResult.description,
+        ai_reasoning: aiResult.reasoning,
+        ai_confidence: aiResult.confidence,
+        ai_valid: aiResult.isValidCivicIssue,
+        image_url: imageUrl,
+        image_path: imagePath,
+        status: 'pending',
+        assigned_department: aiResult.suggestedDepartment,
+        priority: 'medium', // Will be calculated by trigger
+        priority_score: 0, // Will be calculated by trigger
+        is_duplicate: false,
+        duplicate_of: null,
+        upvotes: 0,
+        confirmations: 0
+      }
+
+      console.log('Saving report:', reportData)
+
+      const { data, error } = await supabase
+        .from('reports')
+        .insert([reportData])
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Report save error:', error)
+        throw new Error(`Failed to save report: ${error.message}`)
+      }
+
+      console.log('Report saved successfully:', data)
+      return data
+
+    } catch (error) {
+      console.error('Save report error:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Get all reports with full details
+   * @param {object} options - Query options
+   * @returns {Promise<Object>} Reports data
+   */
+  getAllReports: async (options = {}) => {
+    try {
+      let query = supabase
+        .from('reports')
+        .select(`
+          *,
+          user:auth.users(
+            email,
+            user_metadata
+          )
+        `)
+
+      // Apply ordering
+      if (options.orderBy) {
+        query = query.order(options.orderBy, { ascending: options.ascending || false })
+      } else {
+        query = query.order('created_at', { ascending: false })
+      }
+
+      // Apply filters
+      if (options.status) {
+        query = query.eq('status', options.status)
+      }
+      if (options.priority) {
+        query = query.eq('priority', options.priority)
+      }
+      if (options.aiIssueType) {
+        query = query.eq('ai_issue_type', options.aiIssueType)
+      }
+      if (options.assignedDepartment) {
+        query = query.eq('assigned_department', options.assignedDepartment)
+      }
+
+      // Apply pagination
+      if (options.limit) {
+        query = query.limit(options.limit)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Get all reports error:', error)
+        throw new Error(`Failed to fetch reports: ${error.message}`)
+      }
+
+      return { data, error }
+
+    } catch (error) {
+      console.error('Get all reports error:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Get reports for current user
+   * @param {string} userId - User ID
+   * @param {object} options - Query options
+   * @returns {Promise<Object>} User reports data
+   */
+  getMyReports: async (userId, options = {}) => {
+    try {
+      if (!userId) {
+        throw new Error('User ID is required')
+      }
+
+      let query = supabase
+        .from('reports')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      // Apply filters
+      if (options.status) {
+        query = query.eq('status', options.status)
+      }
+      if (options.priority) {
+        query = query.eq('priority', options.priority)
+      }
+
+      // Apply pagination
+      if (options.limit) {
+        query = query.limit(options.limit)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Get my reports error:', error)
+        throw new Error(`Failed to fetch user reports: ${error.message}`)
+      }
+
+      return { data, error }
+
+    } catch (error) {
+      console.error('Get my reports error:', error)
+      throw error
+    }
+  },
+
+  /**
+   * Update report status
+   * @param {string} reportId - Report ID
+   * @param {string} status - New status
+   * @returns {Promise<Object>} Updated report data
+   */
+  updateReportStatus: async (reportId, status) => {
+    try {
+      if (!reportId) {
+        throw new Error('Report ID is required')
+      }
+
+      if (!status) {
+        throw new Error('Status is required')
+      }
+
+      const { data, error } = await supabase
+        .from('reports')
+        .update({
+          status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', reportId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Update status error:', error)
+        throw new Error(`Failed to update report status: ${error.message}`)
+      }
+
+      return { data, error }
+
+    } catch (error) {
+      console.error('Update report status error:', error)
+      throw error
+    }
   }
 }
 
@@ -268,6 +571,7 @@ export default {
   supabase,
   auth,
   reports,
+  imageReports,
   storage,
   subscriptions
 }

@@ -1,4 +1,4 @@
-// services/imageAnalysis.js
+// services/groqImageAnalysis.js
 /**
  * Groq AI Image Analysis Service
  * 
