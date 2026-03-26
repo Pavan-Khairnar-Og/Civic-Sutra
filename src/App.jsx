@@ -10,6 +10,8 @@ import AdminDashboard from './pages/AdminDashboard'
 import ImageDetectionPage from './pages/ImageDetectionPage'
 import ImageDetectionTest from './components/ImageDetectionTest'
 import SupabaseTest from './components/SupabaseTest'
+import SupabaseTestGuide from './components/SupabaseTestGuide'
+import ImageAnalysisTest from './components/ImageAnalysisTest'
 
 /**
  * Main App component with routing setup and theme provider
@@ -33,6 +35,8 @@ function App() {
               <Route path="/ai-vision" element={<ImageDetectionPage />} />
               <Route path="/ai-vision-test" element={<ImageDetectionTest />} />
               <Route path="/supabase-test" element={<SupabaseTest />} />
+              <Route path="/supabase-guide" element={<SupabaseTestGuide />} />
+              <Route path="/gemini-test" element={<ImageAnalysisTest />} />
             </Routes>
           </main>
         </div>
