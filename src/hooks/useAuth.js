@@ -46,19 +46,44 @@ export const useAuth = () => {
       setError(null)
       setLoading(true)
       
+      // Validate inputs
+      if (!email || !password) {
+        const errorMessage = 'Email and password are required'
+        setError(errorMessage)
+        return { success: false, error: errorMessage }
+      }
+      
+      if (!email.includes('@') || !email.includes('.')) {
+        const errorMessage = 'Please enter a valid email address'
+        setError(errorMessage)
+        return { success: false, error: errorMessage }
+      }
+      
+      if (password.length < 6) {
+        const errorMessage = 'Password must be at least 6 characters long'
+        setError(errorMessage)
+        return { success: false, error: errorMessage }
+      }
+      
+      console.log('Attempting sign in with email:', email)
+      
       const { data, error } = await auth.signIn(email, password)
       
       if (error) {
-        setError(error.message)
-        return { success: false, error: error.message }
+        console.error('Sign in error:', error)
+        const errorMessage = error.message || 'Failed to sign in'
+        setError(errorMessage)
+        return { success: false, error: errorMessage, details: error }
       }
       
+      console.log('Sign in successful:', data)
       setUser(data.user)
-      return { success: true }
+      return { success: true, data }
     } catch (err) {
+      console.error('Sign in exception:', err)
       const errorMessage = err.message || 'Failed to sign in'
       setError(errorMessage)
-      return { success: false, error: errorMessage }
+      return { success: false, error: errorMessage, details: err }
     } finally {
       setLoading(false)
     }
@@ -75,18 +100,43 @@ export const useAuth = () => {
       setError(null)
       setLoading(true)
       
+      // Validate inputs
+      if (!email || !password) {
+        const errorMessage = 'Email and password are required'
+        setError(errorMessage)
+        return { success: false, error: errorMessage }
+      }
+      
+      if (!email.includes('@') || !email.includes('.')) {
+        const errorMessage = 'Please enter a valid email address'
+        setError(errorMessage)
+        return { success: false, error: errorMessage }
+      }
+      
+      if (password.length < 6) {
+        const errorMessage = 'Password must be at least 6 characters long'
+        setError(errorMessage)
+        return { success: false, error: errorMessage }
+      }
+      
+      console.log('Attempting sign up with email:', email)
+      
       const { data, error } = await auth.signUp(email, password, metadata)
       
       if (error) {
-        setError(error.message)
-        return { success: false, error: error.message }
+        console.error('Sign up error:', error)
+        const errorMessage = error.message || 'Failed to sign up'
+        setError(errorMessage)
+        return { success: false, error: errorMessage, details: error }
       }
       
+      console.log('Sign up successful:', data)
       return { success: true, data }
     } catch (err) {
+      console.error('Sign up exception:', err)
       const errorMessage = err.message || 'Failed to sign up'
       setError(errorMessage)
-      return { success: false, error: errorMessage }
+      return { success: false, error: errorMessage, details: err }
     } finally {
       setLoading(false)
     }

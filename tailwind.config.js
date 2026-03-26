@@ -8,17 +8,32 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Custom theme colors using CSS variables with proper fallbacks
-        background: 'var(--color-background, #F5F5DC)',
-        surface: 'var(--color-surface, #FFFFFF)',
-        primary: 'var(--color-primary, #76D2DB)',
-        secondary: 'var(--color-secondary, #D6A99D)',
-        text: 'var(--color-text, #1F2937)',
-        border: 'var(--color-border, #E5E7EB)',
-        danger: 'var(--color-danger, #DA4848)',
-        muted: 'var(--color-muted, #6B7280)',
-        // Beige color for light mode
-        beige: '#F5F5DC',
+  civic: {
+    parchment: '#F8F6F1',
+    surface: '#FFFFFF',
+    muted: '#E8E4DC',
+    mutedDark: '#C8C4BC',
+    textPrimary: '#1C1917',
+    textSecondary: '#6B6560',
+    orange: '#D4522A',
+    orangeHover: '#B8441F',
+    orangeLight: '#FBF0EB',
+    teal: '#2A9D8F',
+    tealLight: '#E8F6F4',
+    amber: '#E9A84C',
+    amberLight: '#FEF6E7',
+    red: '#C1121F',
+    redLight: '#FCEAEA',
+    govBg: '#111110',
+    govSurface: '#1C1C1A',
+    govBorder: '#2C2C2A',
+    govText: '#E8E4DC',
+    govMuted: '#6B6560',
+  }
+},
+      fontFamily: {
+        sans: ['DM Sans', 'sans-serif'],
+        serif: ['DM Serif Display', 'serif'],
       },
       borderRadius: {
         'xl': '0.75rem',
@@ -28,6 +43,7 @@ export default {
       boxShadow: {
         'soft': '0 2px 8px rgba(0, 0, 0, 0.1)',
         'medium': '0 4px 16px rgba(0, 0, 0, 0.15)',
+        'civic-orange': '0 8px 24px rgba(212,82,42,0.35)',
       },
       animation: {
         'fade-in': 'fadeIn 0.2s ease-out',

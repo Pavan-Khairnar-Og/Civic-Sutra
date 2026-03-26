@@ -1,9 +1,9 @@
 import React from 'react'
 
 /**
- * Modern Badge Component - Custom Color Palette
- * Clean, minimal badges with smooth animations and theme support
- * Color-coded badges for status, priority, and categories
+ * Civic Badge Component
+ * Clean, modern badges using the Civic design system
+ * No gradients, no blue/purple colors - only Civic palette
  */
 const Badge = ({ 
   children, 
@@ -16,49 +16,59 @@ const Badge = ({
   const baseStyles = `
     inline-flex items-center font-medium rounded-full
     transition-all duration-200 ease-out
+    transform hover:scale-105
   `
   
   // Size variants
   const sizeStyles = {
-    sm: 'px-2 py-1 text-xs',
+    xs: 'px-2 py-1 text-xs',
+    sm: 'px-2.5 py-1 text-xs',
     md: 'px-3 py-1.5 text-sm',
-    lg: 'px-4 py-2 text-base'
+    lg: 'px-4 py-2 text-base',
+    xl: 'px-5 py-2.5 text-lg'
   }
   
-  // Color variants with custom colors
+  // Color variants using Civic design system
   const variantStyles = {
-    primary: 'bg-primary/10 text-primary border border-primary/20',
-    secondary: 'bg-secondary/10 text-secondary border border-secondary/20',
-    danger: 'bg-danger/10 text-danger border border-danger/20',
-    success: 'bg-secondary/10 text-secondary border border-secondary/20',
-    info: 'bg-primary/10 text-primary border border-primary/20',
-    gray: 'bg-muted/10 text-muted border border-muted/20',
-    outline: 'border border-border text-text',
-    muted: 'bg-muted text-text'
-  }
-  
-  // Priority-specific colors
-  const priorityStyles = {
-    critical: 'bg-danger/10 text-danger border border-danger/20',
-    high: 'bg-secondary/10 text-secondary border border-secondary/20',
-    medium: 'bg-primary/10 text-primary border border-primary/20',
-    low: 'bg-muted/10 text-muted border border-muted/20'
+    primary: 'bg-civic-orangeLight text-civic-orange border border-civic-orange/30',
+    secondary: 'bg-civic-tealLight text-civic-teal border border-civic-teal/30',
+    success: 'bg-civic-tealLight text-civic-teal border border-civic-teal/30',
+    warning: 'bg-civic-amberLight text-civic-amber border border-civic-amber/30',
+    danger: 'bg-civic-redLight text-civic-red border border-civic-red/30',
+    info: 'bg-civic-orangeLight text-civic-orange border border-civic-orange/30',
+    muted: 'bg-civic-muted text-civic-textSecondary border border-civic-muted/30',
+    outline: 'border border-civic-muted text-civic-textSecondary hover:bg-civic-muted/50',
+    solid: 'bg-civic-orange text-white',
+    solidSecondary: 'bg-civic-teal text-white',
+    solidMuted: 'bg-civic-muted text-civic-textPrimary'
   }
   
   // Status-specific colors
   const statusStyles = {
-    pending: 'bg-secondary/10 text-secondary border border-secondary/20',
-    'in-progress': 'bg-primary/10 text-primary border border-primary/20',
-    resolved: 'bg-secondary/10 text-secondary border border-secondary/20',
-    rejected: 'bg-danger/10 text-danger border border-danger/20'
+    pending: 'bg-civic-amberLight text-civic-amber border border-civic-amber/30',
+    'in_progress': 'bg-civic-orangeLight text-civic-orange border border-civic-orange/30',
+    'in-progress': 'bg-civic-orangeLight text-civic-orange border border-civic-orange/30',
+    resolved: 'bg-civic-tealLight text-civic-teal border border-civic-teal/30',
+    rejected: 'bg-civic-redLight text-civic-red border border-civic-red/30',
+    draft: 'bg-civic-muted text-civic-textSecondary border border-civic-muted/30',
+    published: 'bg-civic-tealLight text-civic-teal border border-civic-teal/30',
+    archived: 'bg-civic-muted text-civic-textSecondary border border-civic-muted/30'
+  }
+  
+  // Priority-specific colors
+  const priorityStyles = {
+    critical: 'bg-civic-redLight text-civic-red border border-civic-red/30',
+    high: 'bg-civic-amberLight text-civic-amber border border-civic-amber/30',
+    medium: 'bg-civic-orangeLight text-civic-orange border border-civic-orange/30',
+    low: 'bg-civic-tealLight text-civic-teal border border-civic-teal/30'
   }
   
   // Choose color scheme
   let colorStyles = variantStyles[variant]
-  if (priorityStyles[variant]) {
-    colorStyles = priorityStyles[variant]
-  } else if (statusStyles[variant]) {
+  if (statusStyles[variant]) {
     colorStyles = statusStyles[variant]
+  } else if (priorityStyles[variant]) {
+    colorStyles = priorityStyles[variant]
   }
   
   const combinedStyles = `

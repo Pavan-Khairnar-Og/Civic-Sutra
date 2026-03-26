@@ -1,12 +1,19 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
-import Navbar from './components/Navbar'
+import { AuthProvider } from './context/AuthContext'
+import { ToastProvider } from './components/ui/Toast'
+import Layout from './components/layout/Layout'
+import ProtectedRoute, { AdminRoute, CitizenRoute, AuthRoute } from './components/auth/ProtectedRoute'
 import Home from './pages/Home'
+import Login from './pages/Login'
 import ReportIssue from './pages/ReportIssue'
-import MyReports from './pages/MyReports'
+import ReportDetail from './pages/ReportDetail'
+import MyReports from './pages/MyReports-New'
 import MapView from './pages/MapView'
+import GovernmentDashboard from './pages/GovernmentDashboard'
 import AdminDashboard from './pages/AdminDashboard'
+import Settings from './pages/Settings'
 import ImageDetectionPage from './pages/ImageDetectionPage'
 import ImageDetectionTest from './components/ImageDetectionTest'
 import SupabaseTest from './components/SupabaseTest'
@@ -14,34 +21,80 @@ import SupabaseTestGuide from './components/SupabaseTestGuide'
 import ImageAnalysisTest from './components/ImageAnalysisTest'
 
 /**
- * Main App component with routing setup and theme provider
- * This is the entry point for our Civic Sutra application
- * Features modern Figma-style design system with dark/light mode
- * Includes AI Vision Detection feature and test tools
+ * Main App component with modern design system and authentication
+ * Features professional SaaS-style design with glass morphism
+ * Includes role-based access control and comprehensive routing
  */
 function App() {
   return (
     <ThemeProvider>
-      <Router>
-        <div className="min-h-screen bg-background transition-colors duration-300">
-          <Navbar />
-          <main>
-            <Routes>
+      <ToastProvider>
+        <AuthProvider>
+          <Router future={{ v7_relativeSplatPath: true }}>
+            <Layout>
+              <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<Home />} />
-              <Route path="/report" element={<ReportIssue />} />
-              <Route path="/my-reports" element={<MyReports />} />
-              <Route path="/map" element={<MapView />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/ai-vision" element={<ImageDetectionPage />} />
+              <Route path="/home" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              
+              {/* Citizen Routes (Accessible to all roles including anonymous) */}
+              <Route path="/report" element={
+                <CitizenRoute>
+                  <ReportIssue />
+                </CitizenRoute>
+              } />
+              <Route path="/report/:id" element={
+                <CitizenRoute>
+                  <ReportDetail />
+                </CitizenRoute>
+              } />
+              <Route path="/map" element={
+                <CitizenRoute>
+                  <MapView />
+                </CitizenRoute>
+              } />
+              
+              {/* Authenticated Routes (Requires login, any authenticated role) */}
+              <Route path="/my-reports" element={
+                <AuthRoute>
+                  <MyReports />
+                </AuthRoute>
+              } />
+              <Route path="/settings" element={
+                <AuthRoute>
+                  <Settings />
+                </AuthRoute>
+              } />
+              
+              {/* Government Routes (Government and Admin only) */}
+              <Route path="/government" element={
+                <AdminRoute>
+                  <GovernmentDashboard />
+                </AdminRoute>
+              } />
+              <Route path="/admin" element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              } />
+              
+              {/* Development/Test Routes */}
+              <Route path="/ai-vision" element={
+                <CitizenRoute>
+                  <ImageDetectionPage />
+                </CitizenRoute>
+              } />
               <Route path="/ai-vision-test" element={<ImageDetectionTest />} />
               <Route path="/supabase-test" element={<SupabaseTest />} />
               <Route path="/supabase-guide" element={<SupabaseTestGuide />} />
               <Route path="/gemini-test" element={<ImageAnalysisTest />} />
             </Routes>
-          </main>
-        </div>
-      </Router>
-    </ThemeProvider>
+          </Layout>
+        </Router>
+      </AuthProvider>
+    </ToastProvider>
+  </ThemeProvider>
   )
 }
 

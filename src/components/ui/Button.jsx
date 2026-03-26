@@ -1,9 +1,9 @@
 import React from 'react'
 
 /**
- * Modern Button Component - Custom Color Palette
- * Clean, minimal buttons with smooth animations and theme support
- * Custom colors: Primary (#76D2DB), Secondary (#D6A99D), Danger (#DA4848)
+ * Civic Button Component
+ * Clean, modern buttons using the Civic design system
+ * No gradients, no blue/purple colors - only Civic palette
  */
 const Button = ({ 
   children, 
@@ -17,60 +17,81 @@ const Button = ({
   className = '',
   ...props 
 }) => {
-  // Base styles with theme-aware colors
+  // Base styles
   const baseStyles = `
-    font-medium rounded-xl transition-all duration-200 ease-out
-    focus:outline-none focus:ring-2 focus:ring-offset-2
+    inline-flex items-center justify-center font-medium rounded-full
+    transition-all duration-200 ease-out
+    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-civic-orange/50
     disabled:cursor-not-allowed disabled:opacity-50
-    transform active:scale-95
+    transform active:scale-95 hover:scale-105
+    relative
   `
   
   // Size variants
   const sizeStyles = {
-    sm: 'px-3 py-2 text-sm',
-    md: 'px-4 py-3 text-base',
-    lg: 'px-6 py-4 text-lg',
-    xl: 'px-8 py-6 text-xl'
+    sm: 'px-4 py-2 text-xs',
+    md: 'px-6 py-3 text-sm',
+    lg: 'px-8 py-3.5 text-base',
+    xl: 'px-10 py-4 text-lg'
   }
   
-  // Color variants with custom colors
+  // Color variants using Civic design system
   const variantStyles = {
     primary: `
-      bg-primary text-text hover:bg-primary/90 focus:ring-primary
-      shadow-soft hover:shadow-medium
+      bg-civic-orange hover:bg-civic-orangeHover text-white
+      hover:shadow-[0_8px_24px_rgba(212,82,42,0.35)]
+      disabled:hover:shadow-none
     `,
     secondary: `
-      bg-secondary text-text hover:bg-secondary/90 focus:ring-secondary
-      shadow-soft hover:shadow-medium
-    `,
-    danger: `
-      bg-danger text-white hover:bg-danger/90 focus:ring-danger
-      shadow-soft hover:shadow-medium
+      bg-white border border-civic-muted text-civic-textPrimary
+      hover:bg-civic-muted
+      disabled:hover:bg-white
     `,
     outline: `
-      border-2 border-primary text-primary hover:bg-primary/10 focus:ring-primary
-      bg-transparent
+      bg-transparent border border-civic-muted text-civic-textPrimary
+      hover:bg-civic-orangeLight hover:border-civic-orange hover:text-civic-orange
+      disabled:hover:bg-transparent disabled:hover:text-civic-textPrimary
     `,
     ghost: `
-      text-primary hover:bg-primary/10 focus:ring-primary
-      bg-transparent
+      bg-transparent text-civic-textSecondary
+      hover:text-civic-orange hover:bg-civic-orangeLight/50
+      disabled:hover:text-civic-textSecondary disabled:hover:bg-transparent
     `,
     muted: `
-      bg-surface text-text hover:bg-surface/80 border border-border
-      shadow-soft hover:shadow-medium
+      bg-civic-surface border border-civic-muted text-civic-textSecondary
+      hover:bg-civic-muted hover:text-civic-textPrimary
+      disabled:hover:bg-civic-surface disabled:hover:text-civic-textSecondary
+    `,
+    success: `
+      bg-civic-teal hover:bg-civic-teal/90 text-white
+      hover:shadow-[0_8px_24px_rgba(42,157,143,0.35)]
+      disabled:hover:shadow-none
+    `,
+    warning: `
+      bg-civic-amber hover:bg-civic-amber/90 text-white
+      hover:shadow-[0_8px_24px_rgba(233,168,76,0.35)]
+      disabled:hover:shadow-none
+    `,
+    danger: `
+      bg-civic-red hover:bg-civic-red/90 text-white
+      hover:shadow-[0_8px_24px_rgba(193,18,31,0.35)]
+      disabled:hover:shadow-none
     `
   }
   
   // Width styles
   const widthStyles = fullWidth ? 'w-full' : ''
   
+  // Loading overlay
+  const loadingStyles = loading ? 'cursor-wait' : ''
+  
   const combinedStyles = `
     ${baseStyles}
     ${sizeStyles[size]}
     ${variantStyles[variant]}
     ${widthStyles}
-    ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
-    ${loading ? 'cursor-wait' : ''}
+    ${disabled ? 'cursor-not-allowed opacity-50 hover:transform-none' : ''}
+    ${loadingStyles}
     ${className}
   `.trim().replace(/\s+/g, ' ')
 
@@ -82,12 +103,30 @@ const Button = ({
       disabled={disabled || loading}
       {...props}
     >
+      {/* Loading spinner */}
       {loading && (
-        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 inline" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        <svg 
+          className="animate-spin -ml-1 mr-2 h-4 w-4" 
+          fill="none" 
+          viewBox="0 0 24 24"
+        >
+          <circle 
+            className="opacity-25" 
+            cx="12" 
+            cy="12" 
+            r="10" 
+            stroke="currentColor" 
+            strokeWidth="3"
+          />
+          <path 
+            className="opacity-75" 
+            fill="currentColor" 
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
         </svg>
       )}
+      
+      {/* Button content */}
       {children}
     </button>
   )

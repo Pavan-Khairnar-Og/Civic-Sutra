@@ -123,7 +123,12 @@ const AdvancedLocationPicker = ({ onLocationChange, initialLocation }) => {
   const updateLocation = (latitude, longitude) => {
     const newLocation = { latitude, longitude }
     setLocation(newLocation)
-    onLocationChange(newLocation)
+    
+    // Only call onLocationChange if it's a function
+    if (typeof onLocationChange === 'function') {
+      onLocationChange(newLocation)
+    }
+    
     setError('')
 
     // Update or create marker

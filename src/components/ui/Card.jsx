@@ -1,24 +1,24 @@
 import React from 'react'
 
 /**
- * Modern Card Component - Custom Color Palette
- * Clean, minimal cards with soft shadows and rounded corners
- * Supports dark/light theme and hover animations
+ * Civic Card Component
+ * Clean, modern cards using the Civic design system
+ * No gradients, no blue/purple colors - only Civic palette
  */
 const Card = ({ 
   children, 
   className = '',
   padding = 'md',
-  shadow = 'soft',
+  shadow = 'md',
   hover = false,
   border = true,
   ...props 
 }) => {
-  // Base styles with theme-aware colors
+  // Base styles
   const baseStyles = `
-    bg-surface rounded-xl transition-all duration-200 ease-out
-    ${border ? 'border border-border' : ''}
-    ${hover ? 'hover:shadow-medium hover:-translate-y-1' : ''}
+    bg-civic-surface rounded-2xl transition-all duration-200 ease-out
+    ${border ? 'border border-civic-muted' : ''}
+    ${hover ? 'hover:border-civic-orange hover:shadow-lg' : ''}
   `
   
   // Padding variants
@@ -33,9 +33,9 @@ const Card = ({
   // Shadow variants
   const shadowStyles = {
     none: '',
-    soft: 'shadow-soft',
-    medium: 'shadow-medium',
-    large: 'shadow-lg',
+    sm: 'shadow-sm',
+    md: 'shadow-md',
+    lg: 'shadow-lg',
     xl: 'shadow-xl'
   }
   
@@ -58,7 +58,7 @@ const Card = ({
  */
 Card.Header = ({ children, className = '', ...props }) => {
   const styles = `
-    border-b border-border pb-4 mb-4
+    border-b border-civic-muted pb-4 mb-4
     ${className}
   `.trim()
   return (
@@ -85,7 +85,7 @@ Card.Body = ({ children, className = '', ...props }) => {
  */
 Card.Footer = ({ children, className = '', ...props }) => {
   const styles = `
-    border-t border-border pt-4 mt-4
+    border-t border-civic-muted pt-4 mt-4
     ${className}
   `.trim()
   return (

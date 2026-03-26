@@ -1,367 +1,1026 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase'
-import IssueMap from '../components/IssueMap'
-import ReportCard from '../components/ReportCard'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { Search, X, ChevronLeft, ChevronRight, MapPin, ZoomIn, ZoomOut, Maximize2, Target, Filter, Calendar } from 'lucide-react'
+import L from 'leaflet'
+
+// Import Leaflet CSS
+import 'leaflet/dist/leaflet.css'
 
 /**
- * MapView page component
- * Displays all reported issues on an interactive map
- * Allows filtering and searching of issues by location
- * Integrates with Supabase for real-time data
+ * Map View Page - Complete interactive map with filters and heatmaps
+ * Displays civic issue reports on an interactive map of Mumbai
  */
-const MapView = () => {
-  const [reports, setReports] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [selectedReport, setSelectedReport] = useState(null)
-  const [filter, setFilter] = useState({
-    status: 'all',
-    dateRange: 'all'
+
+// Sample Mumbai data if no real data exists
+const sampleReports = [
+  {
+    id: 'sample-1',
+    title: 'Water leakage on main pipeline',
+    description: 'Major water leakage causing road damage',
+    ai_issue_type: 'Water Supply',
+    ai_severity: 'high',
+    status: 'pending',
+    address: 'Linking Road, Bandra West, Mumbai',
+    latitude: 19.0596,
+    longitude: 72.8297,
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample@example.com',
+    is_anonymous: false,
+    upvotes: 12
+  },
+  {
+    id: 'sample-2',
+    title: 'Pothole damage on SV Road',
+    description: 'Large potholes causing traffic issues',
+    ai_issue_type: 'Roads & Footpaths',
+    ai_severity: 'critical',
+    status: 'in_progress',
+    address: 'SV Road, Andheri West, Mumbai',
+    latitude: 19.1193,
+    longitude: 72.8465,
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample2@example.com',
+    is_anonymous: false,
+    upvotes: 8
+  },
+  {
+    id: 'sample-3',
+    title: 'Street light not working',
+    description: 'Dark street causing safety concerns',
+    ai_issue_type: 'Street Lighting',
+    ai_severity: 'medium',
+    status: 'resolved',
+    address: 'LBS Marg, Ghatkopar, Mumbai',
+    latitude: 19.0835,
+    longitude: 72.9048,
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample3@example.com',
+    is_anonymous: false,
+    upvotes: 5
+  },
+  {
+    id: 'sample-4',
+    title: 'Garbage accumulation',
+    description: 'Uncollected garbage for over a week',
+    ai_issue_type: 'Sanitation & Waste',
+    ai_severity: 'high',
+    status: 'pending',
+    address: 'Pedder Road, Marine Drive, Mumbai',
+    latitude: 18.9594,
+    longitude: 72.8200,
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample4@example.com',
+    is_anonymous: false,
+    upvotes: 15
+  },
+  {
+    id: 'sample-5',
+    title: 'Park maintenance needed',
+    description: 'Overgrown grass and broken benches',
+    ai_issue_type: 'Parks & Gardens',
+    ai_severity: 'low',
+    status: 'pending',
+    address: 'Juhu Garden, Juhu, Mumbai',
+    latitude: 19.1076,
+    longitude: 72.8267,
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample5@example.com',
+    is_anonymous: false,
+    upvotes: 3
+  },
+  {
+    id: 'sample-6',
+    title: 'Traffic signal malfunction',
+    description: 'Signal not working properly',
+    ai_issue_type: 'Public Safety',
+    ai_severity: 'critical',
+    status: 'in_progress',
+    address: 'Worli Sea Face, Worli, Mumbai',
+    latitude: 19.0170,
+    longitude: 72.8196,
+    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample6@example.com',
+    is_anonymous: false,
+    upvotes: 20
+  },
+  {
+    id: 'sample-7',
+    title: 'Drainage blockage',
+    description: 'Blocked drainage causing water logging',
+    ai_issue_type: 'Municipal Administration',
+    ai_severity: 'high',
+    status: 'pending',
+    address: 'Tilak Road, Dadar, Mumbai',
+    latitude: 19.0196,
+    longitude: 72.8445,
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample7@example.com',
+    is_anonymous: false,
+    upvotes: 10
+  },
+  {
+    id: 'sample-8',
+    title: 'Broken water pipe',
+    description: 'Water pipe burst on main road',
+    ai_issue_type: 'Water Supply',
+    ai_severity: 'critical',
+    status: 'under_review',
+    address: 'CST Road, Sion, Mumbai',
+    latitude: 19.0458,
+    longitude: 72.8681,
+    created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample8@example.com',
+    is_anonymous: false,
+    upvotes: 18
+  },
+  {
+    id: 'sample-9',
+    title: 'Footpath repair needed',
+    description: 'Damaged footpath causing accidents',
+    ai_issue_type: 'Roads & Footpaths',
+    ai_severity: 'medium',
+    status: 'resolved',
+    address: 'Carter Road, Bandra, Mumbai',
+    latitude: 19.0594,
+    longitude: 72.8281,
+    created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample9@example.com',
+    is_anonymous: false,
+    upvotes: 7
+  },
+  {
+    id: 'sample-10',
+    title: 'Street light pole damaged',
+    description: 'Pole leaning dangerously',
+    ai_issue_type: 'Street Lighting',
+    ai_severity: 'high',
+    status: 'pending',
+    address: 'Hill Road, Bandra, Mumbai',
+    latitude: 19.0600,
+    longitude: 72.8250,
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample10@example.com',
+    is_anonymous: false,
+    upvotes: 11
+  },
+  {
+    id: 'sample-11',
+    title: 'Illegal dumping',
+    description: 'Construction waste being dumped',
+    ai_issue_type: 'Sanitation & Waste',
+    ai_severity: 'medium',
+    status: 'in_progress',
+    address: 'Mahalaxmi, Mumbai',
+    latitude: 19.0114,
+    longitude: 72.8342,
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample11@example.com',
+    is_anonymous: false,
+    upvotes: 9
+  },
+  {
+    id: 'sample-12',
+    title: 'Tree trimming needed',
+    description: 'Overgrown branches blocking road',
+    ai_issue_type: 'Parks & Gardens',
+    ai_severity: 'low',
+    status: 'pending',
+    address: 'Napean Sea Road, Mumbai',
+    latitude: 19.0486,
+    longitude: 72.8174,
+    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample12@example.com',
+    is_anonymous: false,
+    upvotes: 4
+  },
+  {
+    id: 'sample-13',
+    title: 'Fire safety equipment missing',
+    description: 'No fire extinguishers in building',
+    ai_issue_type: 'Public Safety',
+    ai_severity: 'critical',
+    status: 'under_review',
+    address: 'Bandra-Worli Sea Link, Mumbai',
+    latitude: 19.0300,
+    longitude: 72.8200,
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample13@example.com',
+    is_anonymous: false,
+    upvotes: 22
+  },
+  {
+    id: 'sample-14',
+    title: 'Road marking faded',
+    description: 'Lane markings not visible',
+    ai_issue_type: 'Roads & Footpaths',
+    ai_severity: 'medium',
+    status: 'resolved',
+    address: 'Western Express Highway, Mumbai',
+    latitude: 19.1020,
+    longitude: 72.8750,
+    created_at: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample14@example.com',
+    is_anonymous: false,
+    upvotes: 6
+  },
+  {
+    id: 'sample-15',
+    title: 'Water contamination',
+    description: 'Dirty water supply in area',
+    ai_issue_type: 'Water Supply',
+    ai_severity: 'critical',
+    status: 'in_progress',
+    address: 'Marine Lines, Mumbai',
+    latitude: 18.9450,
+    longitude: 72.8250,
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    citizen_email: 'sample15@example.com',
+    is_anonymous: false,
+    upvotes: 25
+  }
+]
+
+// Department categories with colors
+const categories = [
+  { id: 'Water Supply', name: 'Water Supply', icon: '💧', color: '#0077B6' },
+  { id: 'Roads & Footpaths', name: 'Roads & Footpaths', icon: '🚧', color: '#6B4226' },
+  { id: 'Street Lighting', name: 'Street Lighting', icon: '💡', color: '#F4A261' },
+  { id: 'Sanitation & Waste', name: 'Sanitation & Waste', icon: '🗑️', color: '#4A4E69' },
+  { id: 'Parks & Gardens', name: 'Parks & Gardens', icon: '🌳', color: '#2A9D8F' },
+  { id: 'Public Safety', name: 'Public Safety', icon: '🚨', color: '#C1121F' },
+  { id: 'Municipal Administration', name: 'Municipal Administration', icon: '🏢', color: '#6B6560' }
+]
+
+const severities = [
+  { id: 'critical', name: 'Critical', color: '#DC2626' },
+  { id: 'high', name: 'High', color: '#EA580C' },
+  { id: 'medium', name: 'Medium', color: '#D97706' },
+  { id: 'low', name: 'Low', color: '#059669' }
+]
+
+const statuses = [
+  { id: 'pending', name: 'Pending', color: '#F59E0B' },
+  { id: 'under_review', name: 'Under Review', color: '#3B82F6' },
+  { id: 'in_progress', name: 'In Progress', color: '#F97316' },
+  { id: 'resolved', name: 'Resolved', color: '#10B981' }
+]
+
+// Custom marker component
+const createCustomMarker = (category, severity) => {
+  const categoryInfo = categories.find(c => c.id === category)
+  const severityInfo = severities.find(s => s.id === severity)
+  
+  const svgIcon = `
+    <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 0C7.16 0 0 7.16 0 16c0 2.89.87 5.56 2.34 7.78L16 40l13.66-16.22C31.13 21.56 32 18.89 32 16 32 7.16 24.84 0 16 0z" 
+            fill="${categoryInfo.color}" 
+            stroke="#fff" 
+            stroke-width="2"/>
+      <text x="16" y="20" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="12" font-weight="bold">
+        ${categoryInfo.icon}
+      </text>
+      <circle cx="26" cy="6" r="4" fill="${severityInfo.color}" stroke="#fff" stroke-width="1"/>
+    </svg>
+  `
+  
+  return L.divIcon({
+    html: svgIcon,
+    className: 'custom-marker',
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
+    popupAnchor: [0, -40]
   })
-  const [searchTerm, setSearchTerm] = useState('')
-  const [showSidebar, setShowSidebar] = useState(true)
-  const [userLocation, setUserLocation] = useState(null)
+}
 
-  /**
-   * Fetch all reports from Supabase
-   * Loads reports with location data for map display
-   */
-  const fetchReports = async () => {
-    try {
-      setLoading(true)
-      setError('')
+// Heatmap layer component
+function HeatmapLayer({ reports, viewMode }) {
+  const map = useMap()
+  const heatmapRef = useRef(null)
 
-      const { data, error } = await supabase
-        .from('reports')
-        .select('*')
-        .order('created_at', { ascending: false })
+  useEffect(() => {
+    console.log('HeatmapLayer useEffect triggered', { viewMode, reportsCount: reports.length })
+    
+    // Check if leaflet.heat plugin is available
+    if (typeof L.heatLayer === 'undefined') {
+      console.warn('Leaflet.heat plugin not loaded', { L, heatLayer: L.heatLayer })
+      return
+    }
 
-      if (error) {
-        throw error
+    console.log('Leaflet.heat plugin is available')
+
+    if (viewMode === 'heatmap' || viewMode === 'both') {
+      // Remove existing heatmap if any
+      if (heatmapRef.current) {
+        map.removeLayer(heatmapRef.current)
+        console.log('Removed existing heatmap')
       }
 
-      setReports(data || [])
+      // Prepare heat data with intensity based on severity
+      const heatData = reports.map(report => {
+        const severityWeight = {
+          'critical': 1.0,
+          'high': 0.9,
+          'medium': 0.7,
+          'low': 0.5
+        }
+        
+        const intensity = severityWeight[report.ai_severity] || 0.5
+        console.log('Report data:', { 
+          id: report.id, 
+          lat: report.latitude, 
+          lng: report.longitude, 
+          severity: report.ai_severity, 
+          intensity 
+        })
+        
+        return [
+          report.latitude,
+          report.longitude,
+          intensity
+        ]
+      })
 
-    } catch (error) {
-      console.error('Error fetching reports:', error)
-      setError('Failed to load reports. Please try again.')
-    } finally {
-      setLoading(false)
+      console.log('Heat data prepared:', { totalPoints: heatData.length, sampleData: heatData.slice(0, 3) })
+
+      // Create new heatmap with performance optimizations
+      if (heatData.length > 0) {
+        try {
+          // Use the same data as pins for consistency
+          console.log('Creating heatmap with real data:', heatData)
+          
+          heatmapRef.current = L.heatLayer(heatData, {
+            radius: 50,        // Even larger radius
+            blur: 25,         // Even larger blur
+            maxZoom: 17,
+            max: 1.0,
+            minOpacity: 0.6,    // Higher minimum opacity
+            gradient: {
+              0.0: '#FF0000',    // Bright red for low intensity
+              0.4: '#FF6600',    // Orange
+              0.7: '#FFCC00',    // Yellow
+              1.0: '#00FF00'     // Bright green for high intensity
+            }
+          }).addTo(map)
+          
+          console.log('Heatmap created successfully', heatmapRef.current)
+          
+          // Force canvas to front and ensure visibility
+          setTimeout(() => {
+            const canvasElements = document.querySelectorAll('canvas')
+            console.log('Found canvas elements:', canvasElements.length)
+            canvasElements.forEach((canvas, index) => {
+              if (canvas.width > 0 && canvas.height > 0) {
+                canvas.style.zIndex = '1000'
+                canvas.style.pointerEvents = 'none'
+                canvas.style.opacity = '1'
+                canvas.style.position = 'absolute'
+                canvas.style.top = '0'
+                canvas.style.left = '0'
+                console.log(`Canvas ${index} styled:`, {
+                  width: canvas.width,
+                  height: canvas.height,
+                  zIndex: canvas.style.zIndex,
+                  opacity: canvas.style.opacity
+                })
+              }
+            })
+          }, 500)
+          
+        } catch (error) {
+          console.error('Error creating heatmap:', error)
+        }
+      } else {
+        console.warn('No heat data available')
+      }
+    } else {
+      // Remove heatmap when not in heatmap mode
+      if (heatmapRef.current) {
+        map.removeLayer(heatmapRef.current)
+        heatmapRef.current = null
+        console.log('Heatmap removed (not in heatmap mode)')
+      }
     }
-  }
 
-  /**
-   * Get user's current location
-   * Centers map on user's position
-   */
-  const getUserLocation = () => {
+    return () => {
+      if (heatmapRef.current) {
+        map.removeLayer(heatmapRef.current)
+        console.log('Heatmap cleaned up')
+      }
+    }
+  }, [map, reports, viewMode])
+
+  return null
+}
+
+// Map control components
+function MapControls({ onMyLocation, onZoomIn, onZoomOut, onFullscreen }) {
+  return (
+    <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+      <button
+        onClick={onMyLocation}
+        className="bg-white rounded-xl shadow-sm hover:shadow-md p-3 flex items-center gap-2 text-sm font-medium text-civic-textPrimary hover:text-civic-orange transition-all"
+      >
+        <MapPin className="w-4 h-4" />
+        My Location
+      </button>
+      
+      <div className="bg-white rounded-xl shadow-sm hover:shadow-md flex">
+        <button
+          onClick={onZoomIn}
+          className="p-3 hover:bg-civic-parchment transition-colors rounded-l-xl"
+        >
+          <ZoomIn className="w-4 h-4 text-civic-textPrimary" />
+        </button>
+        <button
+          onClick={onZoomOut}
+          className="p-3 hover:bg-civic-parchment transition-colors rounded-r-xl"
+        >
+          <ZoomOut className="w-4 h-4 text-civic-textPrimary" />
+        </button>
+      </div>
+      
+      <button
+        onClick={onFullscreen}
+        className="bg-white rounded-xl shadow-sm hover:shadow-md p-3 hover:bg-civic-parchment transition-colors"
+      >
+        <Maximize2 className="w-4 h-4 text-civic-textPrimary" />
+      </button>
+    </div>
+  )
+}
+
+// Legend component
+function MapLegend() {
+  return (
+    <div className="absolute bottom-4 right-4 z-[1000] bg-white rounded-2xl p-4 shadow-md border border-civic-muted">
+      <div className="mb-3">
+        <h4 className="font-semibold text-civic-textPrimary text-sm mb-2">Heatmap Intensity</h4>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-4 rounded" style={{ backgroundColor: '#2A9D8F' }}></div>
+          <div className="w-2 h-4 rounded" style={{ backgroundColor: '#E9A84C' }}></div>
+          <div className="w-2 h-4 rounded" style={{ backgroundColor: '#D4522A' }}></div>
+          <div className="w-2 h-4 rounded" style={{ backgroundColor: '#C1121F' }}></div>
+        </div>
+        <div className="flex justify-between text-xs text-civic-textSecondary mt-1">
+          <span>Low</span>
+          <span>High</span>
+        </div>
+      </div>
+      
+      <div>
+        <h4 className="font-semibold text-civic-textPrimary text-sm mb-2">Categories</h4>
+        <div className="space-y-1">
+          {categories.slice(0, 4).map(category => (
+            <div key={category.id} className="flex items-center gap-2 text-xs">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }}></div>
+              <span className="text-civic-textSecondary">{category.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Issue count display
+function IssueCount({ count }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-civic-orange text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg"
+    >
+      Showing {count} issues
+    </motion.div>
+  )
+}
+
+const MapView = () => {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const mapRef = useRef()
+  const [reports, setReports] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [selectedReport, setSelectedReport] = useState(null)
+  
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategories, setSelectedCategories] = useState(categories.map(c => c.id))
+  const [selectedSeverities, setSelectedSeverities] = useState([])
+  const [selectedStatuses, setSelectedStatuses] = useState([])
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [viewMode, setViewMode] = useState('both') // 'heatmap', 'pins', 'both'
+
+  // Load reports from Supabase
+  useEffect(() => {
+    const loadReports = async () => {
+      try {
+        setLoading(true)
+        
+        let query = supabase.from('reports').select('*')
+        
+        // Filter based on user role
+        if (!user) {
+          query = query.eq('is_anonymous', true)
+        } else if (user.role === 'gov' || user.role === 'admin') {
+          // Government users see all reports
+        } else {
+          if (user.email) {
+            query = query.eq('citizen_email', user.email)
+          } else {
+            query = query.eq('is_anonymous', true)
+          }
+        }
+        
+        query = query.order('created_at', { ascending: false })
+        
+        const { data, error } = await query
+        
+        if (error) {
+          console.error('Failed to load reports:', error)
+          // Use sample data as fallback
+          setReports(sampleReports)
+        } else {
+          // Add sample data to real data for better visualization
+          const allReports = [...(data || []), ...sampleReports]
+          setReports(allReports)
+        }
+      } catch (err) {
+        console.error('Failed to load reports:', err)
+        setReports(sampleReports)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadReports()
+  }, [user])
+
+  // Filter reports
+  const filteredReports = useMemo(() => {
+    const filtered = reports.filter(report => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase()
+        if (!report.title.toLowerCase().includes(query) && 
+            !report.address.toLowerCase().includes(query)) {
+          return false
+        }
+      }
+      
+      // Category filter
+      if (selectedCategories.length > 0 && !selectedCategories.includes(report.ai_issue_type)) {
+        return false
+      }
+      
+      // Severity filter
+      if (selectedSeverities.length > 0 && !selectedSeverities.includes(report.ai_severity)) {
+        return false
+      }
+      
+      // Status filter
+      if (selectedStatuses.length > 0 && !selectedStatuses.includes(report.status)) {
+        return false
+      }
+      
+      // Date filter
+      if (dateFrom && new Date(report.created_at) < new Date(dateFrom)) {
+        return false
+      }
+      if (dateTo && new Date(report.created_at) > new Date(dateTo)) {
+        return false
+      }
+      
+      return true
+    })
+    
+    console.log('Filtered reports:', { 
+      total: filtered.length, 
+      viewMode, 
+      sampleData: filtered.slice(0, 3).map(r => ({ 
+        id: r.id, 
+        lat: r.latitude, 
+        lng: r.longitude, 
+        severity: r.ai_severity 
+      }))
+    })
+    
+    return filtered
+  }, [reports, searchQuery, selectedCategories, selectedSeverities, selectedStatuses, dateFrom, dateTo, viewMode])
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const critical = filteredReports.filter(r => r.ai_severity === 'critical').length
+    const resolvedToday = filteredReports.filter(r => 
+      r.status === 'resolved' && 
+      new Date(r.created_at).toDateString() === new Date().toDateString()
+    ).length
+    
+    return {
+      total: filteredReports.length,
+      critical,
+      resolvedToday
+    }
+  }, [filteredReports])
+
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    return categories.map(category => ({
+      ...category,
+      count: filteredReports.filter(r => r.ai_issue_type === category.id).length
+    }))
+  }, [filteredReports])
+
+  // Map control handlers
+  const handleMyLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords
-          setUserLocation({ latitude, longitude })
+          if (mapRef.current) {
+            mapRef.current.setView([latitude, longitude], 15)
+          }
         },
         (error) => {
           console.error('Error getting location:', error)
-          // Don't show error for location, just continue without it
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
         }
       )
     }
   }
 
-  /**
-   * Filter reports based on selected criteria
-   * Updates displayed reports when filters change
-   */
-  const getFilteredReports = () => {
-    let filtered = [...reports]
-
-    // Filter by status
-    if (filter.status !== 'all') {
-      filtered = filtered.filter(report => report.status === filter.status)
+  const handleZoomIn = () => {
+    if (mapRef.current) {
+      mapRef.current.zoomIn()
     }
+  }
 
-    // Filter by date range
-    if (filter.dateRange !== 'all') {
-      const now = new Date()
-      let filterDate
-
-      switch (filter.dateRange) {
-        case 'today':
-          filterDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-          break
-        case 'week':
-          filterDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-          break
-        case 'month':
-          filterDate = new Date(now.getFullYear(), now.getMonth(), 1)
-          break
-        default:
-          filterDate = null
-      }
-
-      if (filterDate) {
-        filtered = filtered.filter(report => 
-          new Date(report.created_at) >= filterDate
-        )
-      }
+  const handleZoomOut = () => {
+    if (mapRef.current) {
+      mapRef.current.zoomOut()
     }
+  }
 
-    // Filter by search term
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase()
-      filtered = filtered.filter(report => 
-        report.description?.toLowerCase().includes(searchLower) ||
-        report.status?.toLowerCase().includes(searchLower)
-      )
+  const handleFullscreen = () => {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen()
     }
-
-    return filtered
   }
 
-  /**
-   * Handle report selection from map
-   * Shows detailed view of selected report
-   */
-  const handleReportSelect = (report) => {
-    setSelectedReport(report)
-    setShowSidebar(true)
+  // Filter handlers
+  const toggleCategory = (categoryId) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    )
   }
 
-  /**
-   * Handle marker click on map
-   * Centers view on selected report
-   */
-  const handleMarkerClick = (report) => {
-    setSelectedReport(report)
-    // Could also center map on this location
+  const toggleSeverity = (severityId) => {
+    setSelectedSeverities(prev => 
+      prev.includes(severityId) 
+        ? prev.filter(id => id !== severityId)
+        : [...prev, severityId]
+    )
   }
 
-  /**
-   * Clear all filters
-   * Resets to show all reports
-   */
-  const clearFilters = () => {
-    setFilter({
-      status: 'all',
-      dateRange: 'all'
-    })
-    setSearchTerm('')
+  const toggleStatus = (statusId) => {
+    setSelectedStatuses(prev => 
+      prev.includes(statusId) 
+        ? prev.filter(id => id !== statusId)
+        : [...prev, statusId]
+    )
   }
 
-  /**
-   * Load reports and get user location on component mount
-   */
-  useEffect(() => {
-    fetchReports()
-    getUserLocation()
-  }, [])
+  const resetFilters = () => {
+    setSearchQuery('')
+    setSelectedCategories(categories.map(c => c.id))
+    setSelectedSeverities([])
+    setSelectedStatuses([])
+    setDateFrom('')
+    setDateTo('')
+  }
 
-  const filteredReports = getFilteredReports()
-  const reportsWithLocation = filteredReports.filter(report => 
-    report.latitude && report.longitude &&
-    !isNaN(report.latitude) && !isNaN(report.longitude)
-  )
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-civic-parchment">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-civic-orange mx-auto mb-4"></div>
+          <p className="text-civic-textSecondary">Loading map...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">
-              Map View
-            </h1>
-            <p className="text-sm text-gray-500">
-              {reportsWithLocation.length} issues on map • {filteredReports.length} total filtered
-            </p>
-          </div>
+    <div className="h-screen overflow-hidden relative">
+      {/* Map Container */}
+      <div className="absolute inset-0 top-16">
+        <MapContainer
+          center={[19.0760, 72.8777]}
+          zoom={12}
+          style={{ height: '100%', width: '100%' }}
+          ref={mapRef}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          />
           
-          {/* Mobile Toggle */}
-          <button
-            onClick={() => setShowSidebar(!showSidebar)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
-          >
-            🗺️
-          </button>
-        </div>
+          {/* Heatmap Layer */}
+          <HeatmapLayer reports={filteredReports} viewMode={viewMode} />
+          
+          {/* Markers */}
+          {viewMode === 'pins' || viewMode === 'both' ? (
+            filteredReports.map(report => {
+              console.log('Creating marker for report:', {
+                id: report.id,
+                lat: report.latitude,
+                lng: report.longitude,
+                title: report.title
+              })
+              
+              return (
+                <Marker
+                  key={report.id}
+                  position={[report.latitude, report.longitude]}
+                  icon={createCustomMarker(report.ai_issue_type, report.ai_severity)}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedReport(report)
+                      if (mapRef.current) {
+                        mapRef.current.setView([report.latitude, report.longitude], 16)
+                      }
+                    }
+                  }}
+                >
+                  <Popup>
+                    <div className="bg-white rounded-2xl p-4 shadow-xl min-w-[240px]">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="bg-civic-parchment px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                          {categories.find(c => c.id === report.ai_issue_type)?.icon} 
+                          {categories.find(c => c.id === report.ai_issue_type)?.name}
+                        </span>
+                        <span className={`w-2 h-2 rounded-full`} style={{ backgroundColor: severities.find(s => s.id === report.ai_severity)?.color }}></span>
+                      </div>
+                      
+                      <h3 className="font-semibold text-civic-textPrimary mb-2">{report.title}</h3>
+                      
+                      <div className="text-sm text-civic-textSecondary mb-2">
+                        <div className="flex items-center gap-1 mb-1">
+                          <MapPin className="w-3 h-3" />
+                          <span className="line-clamp-1">{report.address}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span>Status:</span>
+                          <span className="font-medium">{statuses.find(s => s.id === report.status)?.name}</span>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => navigate(`/report/${report.id}`)}
+                        className="text-civic-orange font-medium text-sm hover:underline"
+                      >
+                        View Full Report →
+                      </button>
+                    </div>
+                  </Popup>
+                </Marker>
+              )
+            })
+          ) : null}
+        </MapContainer>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
-        <div className={`${showSidebar ? 'w-80' : 'w-0'} transition-all duration-300 bg-white border-r border-gray-200 flex flex-col overflow-hidden`}>
-          {/* Filters */}
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Filters & Search
-            </h2>
-            
-            {/* Search */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Reports
-              </label>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search descriptions..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+      {/* Map Controls */}
+      <MapControls
+        onMyLocation={handleMyLocation}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onFullscreen={handleFullscreen}
+      />
 
-            {/* Status Filter */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                value={filter.status}
-                onChange={(e) => setFilter(prev => ({ ...prev, status: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">⏳ Pending</option>
-                <option value="in_progress">🔧 In Progress</option>
-                <option value="resolved">✅ Resolved</option>
-              </select>
-            </div>
+      {/* Legend */}
+      <MapLegend />
 
-            {/* Date Range Filter */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date Range
-              </label>
-              <select
-                value={filter.dateRange}
-                onChange={(e) => setFilter(prev => ({ ...prev, dateRange: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Time</option>
-                <option value="today">Today</option>
-                <option value="week">Last Week</option>
-                <option value="month">Last Month</option>
-              </select>
-            </div>
+      {/* Issue Count */}
+      <IssueCount count={filteredReports.length} />
 
-            {/* Clear Filters */}
-            <button
-              onClick={clearFilters}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-            >
-              Clear Filters
-            </button>
-          </div>
-
-          {/* Reports List */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Reports ({filteredReports.length})
-            </h3>
-            
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-gray-500 mt-2">Loading reports...</p>
+      {/* Sidebar */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ x: -300 }}
+            animate={{ x: 0 }}
+            exit={{ x: -300 }}
+            transition={{ type: 'spring', damping: 25 }}
+            className="absolute left-0 top-16 bottom-0 w-[300px] bg-white border-r border-civic-muted overflow-y-auto z-[999]"
+          >
+            <div className="p-6">
+              {/* Header */}
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold text-civic-textPrimary mb-1">Map Filters</h2>
+                <p className="text-sm text-civic-textSecondary">Showing {filteredReports.length} issues</p>
               </div>
-            ) : filteredReports.length > 0 ? (
-              <div className="space-y-4">
-                {filteredReports.map((report) => (
-                  <div
-                    key={report.id}
-                    onClick={() => handleReportSelect(report)}
-                    className={`cursor-pointer p-3 rounded-lg border transition-colors ${
-                      selectedReport?.id === report.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:bg-gray-50'
+
+              {/* Search */}
+              <div className="mb-6">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-civic-textSecondary" />
+                  <input
+                    type="text"
+                    placeholder="Search location or title..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-civic-parchment rounded-lg border border-civic-muted focus:outline-none focus:ring-2 focus:ring-civic-orange/20"
+                  />
+                </div>
+              </div>
+
+              {/* Category Filter */}
+              <div className="mb-6">
+                <h3 className="font-medium text-civic-textPrimary mb-3">Categories</h3>
+                <div className="space-y-2">
+                  {categoryCounts.map(category => (
+                    <label key={category.id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedCategories.includes(category.id)}
+                        onChange={() => toggleCategory(category.id)}
+                        className="rounded border-civic-muted text-civic-orange focus:ring-civic-orange"
+                      />
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }}></div>
+                      <span className="text-sm text-civic-textPrimary">{category.name}</span>
+                      <span className="text-xs text-civic-textSecondary bg-civic-parchment px-1.5 py-0.5 rounded-full">
+                        {category.count}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => setSelectedCategories(categories.map(c => c.id))}
+                    className="text-xs text-civic-orange hover:underline"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    onClick={() => setSelectedCategories([])}
+                    className="text-xs text-civic-orange hover:underline"
+                  >
+                    Deselect All
+                  </button>
+                </div>
+              </div>
+
+              {/* Severity Filter */}
+              <div className="mb-6">
+                <h3 className="font-medium text-civic-textPrimary mb-3">Severity</h3>
+                <div className="flex flex-wrap gap-2">
+                  {severities.map(severity => (
+                    <button
+                      key={severity.id}
+                      onClick={() => toggleSeverity(severity.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        selectedSeverities.includes(severity.id)
+                          ? 'text-white'
+                          : 'bg-civic-parchment text-civic-textSecondary hover:text-civic-textPrimary'
+                      }`}
+                      style={{
+                        backgroundColor: selectedSeverities.includes(severity.id) ? severity.color : undefined
+                      }}
+                    >
+                      {severity.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Status Filter */}
+              <div className="mb-6">
+                <h3 className="font-medium text-civic-textPrimary mb-3">Status</h3>
+                <div className="flex flex-wrap gap-2">
+                  {statuses.map(status => (
+                    <button
+                      key={status.id}
+                      onClick={() => toggleStatus(status.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        selectedStatuses.includes(status.id)
+                          ? 'text-white'
+                          : 'bg-civic-parchment text-civic-textSecondary hover:text-civic-textPrimary'
+                      }`}
+                      style={{
+                        backgroundColor: selectedStatuses.includes(status.id) ? status.color : undefined
+                      }}
+                    >
+                      {status.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Date Range */}
+              <div className="mb-6">
+                <h3 className="font-medium text-civic-textPrimary mb-3">Date Range</h3>
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs text-civic-textSecondary">From</label>
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="w-full px-3 py-2 bg-civic-parchment rounded-lg border border-civic-muted focus:outline-none focus:ring-2 focus:ring-civic-orange/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-civic-textSecondary">To</label>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="w-full px-3 py-2 bg-civic-parchment rounded-lg border border-civic-muted focus:outline-none focus:ring-2 focus:ring-civic-orange/20"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* View Mode */}
+              <div className="mb-6">
+                <h3 className="font-medium text-civic-textPrimary mb-3">View Mode</h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setViewMode('heatmap')}
+                    className={`flex-1 px-3 py-2 rounded-full text-xs font-medium transition-colors ${
+                      viewMode === 'heatmap' 
+                        ? 'bg-civic-orange text-white' 
+                        : 'bg-civic-parchment text-civic-textSecondary hover:text-civic-textPrimary'
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        report.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        report.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                        report.status === 'resolved' ? 'bg-green-100 text-green-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {report.status || 'pending'}
-                      </span>
-                      {report.latitude && report.longitude && (
-                        <span className="text-xs text-gray-500">
-                          📍 {report.latitude.toFixed(4)}, {report.longitude.toFixed(4)}
-                        </span>
-                      )}
-                    </div>
-                    
-                    <p className="text-sm text-gray-700 line-clamp-2 mb-2">
-                      {report.description || 'No description'}
-                    </p>
-                    
-                    <p className="text-xs text-gray-500">
-                      {new Date(report.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                ))}
+                    🔥 Heatmap
+                  </button>
+                  <button
+                    onClick={() => setViewMode('pins')}
+                    className={`flex-1 px-3 py-2 rounded-full text-xs font-medium transition-colors ${
+                      viewMode === 'pins' 
+                        ? 'bg-civic-orange text-white' 
+                        : 'bg-civic-parchment text-civic-textSecondary hover:text-civic-textPrimary'
+                    }`}
+                  >
+                    📍 Pins
+                  </button>
+                  <button
+                    onClick={() => setViewMode('both')}
+                    className={`flex-1 px-3 py-2 rounded-full text-xs font-medium transition-colors ${
+                      viewMode === 'both' 
+                        ? 'bg-civic-orange text-white' 
+                        : 'bg-civic-parchment text-civic-textSecondary hover:text-civic-textPrimary'
+                    }`}
+                  >
+                    🔀 Both
+                  </button>
+                </div>
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="text-gray-400 text-4xl mb-4">🗺️</div>
-                <p className="text-gray-500">No reports found</p>
-                <p className="text-gray-400 mt-2">
-                  Try adjusting the filters
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Map Container */}
-        <div className="flex-1 relative">
-          {error && (
-            <div className="absolute top-4 right-4 z-10 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg max-w-sm">
-              {error}
+              {/* Reset Filters */}
+              <button
+                onClick={resetFilters}
+                className="w-full px-4 py-2 text-civic-orange font-medium text-sm hover:bg-civic-parchment rounded-lg transition-colors"
+              >
+                Reset All Filters
+              </button>
+
+              {/* Stats Cards */}
+              <div className="mt-6 space-y-3">
+                <div className="bg-civic-parchment rounded-xl p-3">
+                  <div className="text-2xl font-bold text-civic-textPrimary">{stats.total}</div>
+                  <div className="text-xs text-civic-textSecondary">Total Issues</div>
+                </div>
+                <div className="bg-civic-parchment rounded-xl p-3">
+                  <div className="text-2xl font-bold text-red-600">{stats.critical}</div>
+                  <div className="text-xs text-civic-textSecondary">Critical Issues</div>
+                </div>
+                <div className="bg-civic-parchment rounded-xl p-3">
+                  <div className="text-2xl font-bold text-green-600">{stats.resolvedToday}</div>
+                  <div className="text-xs text-civic-textSecondary">Resolved Today</div>
+                </div>
+              </div>
             </div>
-          )}
-          
-          <IssueMap 
-            reports={reportsWithLocation} 
-            height="100%"
-            centerOnUser={userLocation !== null}
-            showControls={true}
-          />
-        </div>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Selected Report Details */}
-      {selectedReport && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Report Details
-                </h2>
-                <button
-                  onClick={() => setSelectedReport(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <ReportCard
-                report={selectedReport}
-                showActions={true}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Sidebar Toggle */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="absolute left-0 top-20 z-[1000] bg-civic-orange text-white p-2 rounded-r-lg shadow-lg hover:bg-civic-orange/90 transition-colors"
+      >
+        {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+      </button>
     </div>
   )
 }

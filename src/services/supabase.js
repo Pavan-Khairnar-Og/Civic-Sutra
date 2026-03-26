@@ -27,7 +27,8 @@ export const auth = {
       email,
       password,
       options: {
-        data: metadata
+        data: metadata,
+        emailRedirectTo: window.location.origin + '/login'
       }
     })
     return { data, error }
@@ -64,10 +65,134 @@ export const auth = {
 
   /**
    * Listen to auth state changes
-   * @param {function} callback - Callback function for auth state changes
    */
   onAuthStateChange: (callback) => {
     return supabase.auth.onAuthStateChange(callback)
+  },
+}
+
+/**
+ * Create a test user (for development only)
+ * @param {string} email - Test email
+ * @param {string} password - Test password
+ * @param {string} role - User role
+ */
+export const createTestUser = async (email = 'test@civicsutra.com', password = 'test123456', role = 'citizen') => {
+  console.log('Creating test user:', email)
+  
+  // First try to sign up the user
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { 
+        role: role,
+        full_name: 'Test User',
+        created_at: new Date().toISOString()
+      },
+      emailRedirectTo: window.location.origin + '/login'
+    }
+  })
+
+  if (error) {
+    // If user already exists, try to sign in to verify
+    if (error.message.includes('already registered')) {
+      console.log('User already exists, attempting to sign in...')
+      const signInResult = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+      return { 
+        success: true, 
+        message: 'Test user already exists and is valid',
+        user: signInResult.data.user 
+      }
+    }
+    return { success: false, error: error.message }
+  }
+
+  // For development, we might need to confirm the email manually
+  // Check if the user was created but needs email confirmation
+  if (data.user && !data.session) {
+    console.log('User created but email confirmation required. For development, you may need to:')
+    console.log('1. Disable email confirmation in Supabase project settings')
+    console.log('2. Or manually confirm the email in Supabase dashboard')
+    console.log('3. Or use the test user that bypasses email confirmation')
+    
+    return { 
+      success: true, 
+      message: 'Test user created successfully but email confirmation required',
+      user: data.user,
+      needsConfirmation: true
+    }
+  }
+
+  return { 
+    success: true, 
+    message: 'Test user created and signed in successfully',
+    user: data.user,
+    session: data.session
+  }
+}
+
+// Make function available globally for console access
+if (typeof window !== 'undefined') {
+  window.createTestUser = createTestUser
+  
+  // Add a simpler function for immediate testing
+  window.createSimpleTestUser = async () => {
+    console.log('Creating simple test user...')
+    
+    try {
+      // Try to sign in first (in case user already exists)
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: 'test@civicsutra.com',
+        password: 'test123456'
+      })
+      
+      if (signInData.user) {
+        console.log('✅ Test user already exists and signed in!')
+        return { success: true, message: 'Test user signed in successfully', user: signInData.user }
+      }
+      
+      // If sign in fails, try to create the user
+      console.log('Creating new test user...')
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: 'test@civicsutra.com',
+        password: 'test123456',
+        options: {
+          data: { 
+            role: 'citizen',
+            full_name: 'Test User',
+            created_at: new Date().toISOString()
+          },
+          emailRedirectTo: window.location.origin + '/login'
+        }
+      })
+      
+      if (signUpError) {
+        console.error('❌ Failed to create test user:', signUpError)
+        return { success: false, error: signUpError.message }
+      }
+      
+      if (signUpData.user && !signUpData.session) {
+        console.log('⚠️ Test user created but needs email confirmation')
+        console.log('💡 Try disabling email confirmation in Supabase dashboard for development')
+        return { 
+          success: true, 
+          message: 'Test user created but needs email confirmation',
+          needsConfirmation: true,
+          user: signUpData.user 
+        }
+      }
+      
+      console.log('✅ Test user created and signed in!')
+      return { success: true, message: 'Test user created and signed in', user: signUpData.user }
+      
+    } catch (error) {
+      console.error('❌ Error creating test user:', error)
+      return { success: false, error: error.message }
+    }
   }
 }
 
