@@ -33,6 +33,7 @@ const ReportIssue = () => {
   const [citizenName, setCitizenName] = useState('')
   const [citizenEmail, setCitizenEmail] = useState('')
   const [title, setTitle] = useState('')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   
   // State for UI management
   const [isLoading, setIsLoading] = useState(false)
@@ -308,12 +309,9 @@ const ReportIssue = () => {
     setError('')
 
     try {
-      // Get current user
+      // Get current user (allow anonymous submissions)
       const { data: { user }, error: authError } = await supabase.auth.getUser()
-      if (authError || !user) {
-        throw new Error('Please sign in to submit a report.')
-      }
-
+      
       // Step 1: Convert image data URL to File object
       const response = await fetch(capturedImage)
       if (!response.ok) {
@@ -324,13 +322,15 @@ const ReportIssue = () => {
       const file = new File([blob], 'report-image.jpg', { type: 'image/jpeg' })
 
       // Step 2: Upload image using new uploadReportImage function
-      const { imageUrl, imagePath } = await imageReports.uploadReportImage(file, user.id)
+      // For anonymous users, use a temporary ID for folder structure
+      const userId = user?.id || 'anonymous'
+      const { imageUrl, imagePath } = await imageReports.uploadReportImage(file, userId)
 
       // Step 3: Prepare complete report data with AI results
       const reportData = {
-        userId: user.id,
+        userId: user?.id || null,
         citizenName: citizenName.trim() || null,
-        citizenEmail: citizenEmail.trim() || user.email,
+        citizenEmail: citizenEmail.trim() || user?.email || null,
         title: title.trim() || (aiResult?.isValidCivicIssue 
           ? `AI Detected: ${aiResult.issueType.charAt(0).toUpperCase() + aiResult.issueType.slice(1)}`
           : 'Civic Issue Report'),
@@ -361,7 +361,16 @@ const ReportIssue = () => {
       // Success! Navigate to my-reports with success parameter
       setSuccess('Report submitted successfully! Your civic issue has been recorded.')
       setTimeout(() => {
-        navigate('/my-reports?success=' + savedReport.id)
+        if (user) {
+          navigate('/my-reports?success=' + savedReport.id)
+        } else {
+          navigate('/', { 
+            state: { 
+              message: 'Report submitted successfully! You can view all reports on the map.',
+              type: 'success'
+            }
+          })
+        }
       }, 2000)
 
     } catch (error) {
@@ -426,6 +435,33 @@ const ReportIssue = () => {
     setError('')
     setSuccess('')
   }
+
+  /**
+   * Check authentication status and get user info
+   */
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setIsAuthenticated(!!user)
+      
+      // Pre-fill email if user is authenticated
+      if (user?.email && !citizenEmail) {
+        setCitizenEmail(user.email)
+      }
+    }
+    
+    checkAuth()
+    
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session?.user)
+      if (session?.user?.email && !citizenEmail) {
+        setCitizenEmail(session.user.email)
+      }
+    })
+    
+    return () => subscription.unsubscribe()
+  }, [citizenEmail])
 
   /**
    * Cleanup camera stream when component unmounts
@@ -652,34 +688,55 @@ const ReportIssue = () => {
           {/* Citizen Information Section */}
           <Card hover={true} className="group">
             <Card.Header>
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
-                  <span className="text-2xl">👤</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
+                    <span className="text-2xl">👤</span>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-text">Your Information</h2>
+                    <p className="text-sm text-text/60">
+                      {isAuthenticated ? 'Optional contact details' : 'Optional - Submit anonymously or provide contact info'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-text">Your Information</h2>
-                  <p className="text-sm text-text/60">Optional contact details</p>
-                </div>
+                {isAuthenticated && (
+                  <Badge variant="success" size="sm">
+                    ✓ Signed In
+                  </Badge>
+                )}
               </div>
             </Card.Header>
             
             <Card.Body>
+              {!isAuthenticated && (
+                <div className="mb-6 p-4 bg-primary/10 rounded-lg border border-primary/20">
+                  <div className="flex items-center">
+                    <span className="text-primary mr-2">ℹ️</span>
+                    <p className="text-sm text-primary/80">
+                      You're submitting anonymously. Sign in to track your reports and receive updates.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
               <div className="grid md:grid-cols-2 gap-6">
                 <Input
                   label="Your Name (Optional)"
-                  placeholder="John Doe"
+                  placeholder={isAuthenticated ? "Your name" : "Anonymous citizen"}
                   value={citizenName}
                   onChange={(e) => setCitizenName(e.target.value)}
-                  helperText="Helps us follow up on your report"
+                  helperText={isAuthenticated ? "Helps us follow up on your report" : "Optional - helps us follow up"}
                 />
                 
                 <Input
                   label="Email (Optional)"
                   type="email"
-                  placeholder="john@example.com"
+                  placeholder={isAuthenticated ? "your@email.com" : "email@example.com"}
                   value={citizenEmail}
                   onChange={(e) => setCitizenEmail(e.target.value)}
-                  helperText="For status updates and notifications"
+                  helperText={isAuthenticated ? "For status updates and notifications" : "Optional - for updates on your report"}
+                  disabled={isAuthenticated && !!supabase.auth.getUser().then(d => d.data?.user?.email)}
                 />
               </div>
             </Card.Body>

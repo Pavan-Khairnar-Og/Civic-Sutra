@@ -225,13 +225,16 @@ export const imageReports = {
         throw new Error('No file provided for upload')
       }
 
-      if (!userId) {
-        throw new Error('User ID is required for image upload')
+      // Handle anonymous users by generating a temporary folder
+      let folderName = userId
+      if (!userId || userId === 'anonymous') {
+        // Generate a unique temporary folder for anonymous uploads
+        folderName = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       }
 
       // Generate unique filename
       const fileExt = file.name.split('.').pop()
-      const fileName = `${userId}/${Date.now()}.${fileExt}`
+      const fileName = `${folderName}/${Date.now()}.${fileExt}`
       const filePath = `reports/${fileName}`
 
       console.log('Uploading image:', filePath)
@@ -288,10 +291,6 @@ export const imageReports = {
     aiResult
   }) => {
     try {
-      if (!userId) {
-        throw new Error('User ID is required')
-      }
-
       if (!imageUrl || !imagePath) {
         throw new Error('Image URL and path are required')
       }
@@ -300,8 +299,9 @@ export const imageReports = {
         throw new Error('AI analysis result is required')
       }
 
+      // Allow anonymous submissions (userId can be null)
       const reportData = {
-        user_id: userId,
+        user_id: userId || null, // Allow null for anonymous users
         citizen_name: citizenName || null,
         citizen_email: citizenEmail || null,
         latitude: location.latitude,

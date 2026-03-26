@@ -136,6 +136,11 @@ const ReportCard = ({
               <Badge variant={getPriorityColor(report.priority)} size="sm">
                 {report.priority || 'medium'}
               </Badge>
+              {report.ai_confidence && (
+                <Badge variant="success" size="sm">
+                  🤖 {Math.round(report.ai_confidence * 100)}%
+                </Badge>
+              )}
             </div>
             
             {/* Description */}
@@ -196,6 +201,15 @@ const ReportCard = ({
               {report.priority || 'medium'} priority
             </Badge>
           </div>
+          
+          {/* AI Analysis Badge */}
+          {report.ai_confidence && (
+            <div className="absolute bottom-3 right-3">
+              <Badge variant="success" size="sm" className="bg-black/50 text-white">
+                🤖 AI {Math.round(report.ai_confidence * 100)}%
+              </Badge>
+            </div>
+          )}
         </div>
       )}
 
@@ -236,6 +250,36 @@ const ReportCard = ({
             </div>
           )}
         </div>
+
+        {/* AI Analysis Summary */}
+        {report.ai_issue_type && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-blue-900">🤖 AI Analysis</span>
+              <Badge variant="success" size="sm">
+                {Math.round((report.ai_confidence || 0) * 100)}% confidence
+              </Badge>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div>
+                <span className="text-gray-600">Type:</span>
+                <p className="font-medium text-gray-900">{report.ai_issue_type}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Severity:</span>
+                <p className="font-medium text-gray-900">{report.ai_severity || 'Unknown'}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Department:</span>
+                <p className="font-medium text-gray-900">{report.ai_department || 'Unassigned'}</p>
+              </div>
+              <div>
+                <span className="text-gray-600">Valid:</span>
+                <p className="font-medium text-gray-900">{report.ai_valid ? 'Yes' : 'No'}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Status Update Section (Admin Only) */}
         {showStatusUpdate && onStatusChange && (

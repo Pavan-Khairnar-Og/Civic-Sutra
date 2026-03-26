@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../services/supabase'
 import ReportCard from '../components/ReportCard'
 import IssueMap from '../components/IssueMap'
+import AIAnalysisDetails from '../components/AIAnalysisDetails'
 
 /**
  * AdminDashboard page component
@@ -439,25 +440,73 @@ const AdminDashboard = () => {
       {/* Report Details Modal */}
       {selectedReport && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Report Details
-                </h2>
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Report Details
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    Report ID: {selectedReport.id?.substring(0, 8)}...
+                  </p>
+                </div>
                 <button
                   onClick={() => setSelectedReport(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
                 >
                   ✕
                 </button>
               </div>
 
-              <ReportCard
-                report={selectedReport}
-                showStatusUpdate={true}
-                onStatusChange={handleStatusUpdate}
-              />
+              <div className="space-y-6">
+                {/* Basic Report Information */}
+                <ReportCard
+                  report={selectedReport}
+                  showStatusUpdate={true}
+                  onStatusChange={handleStatusUpdate}
+                  compact={false}
+                />
+
+                {/* AI Analysis Details */}
+                <AIAnalysisDetails 
+                  report={selectedReport} 
+                  showFullDetails={true}
+                />
+
+                {/* Additional Actions */}
+                <div className="flex flex-col sm:flex-row gap-4 p-6 bg-gray-50 rounded-lg">
+                  {selectedReport.image_url && (
+                    <button
+                      onClick={() => window.open(selectedReport.image_url, '_blank')}
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      🖼️ View Full Image
+                    </button>
+                  )}
+                  
+                  {selectedReport.latitude && selectedReport.longitude && (
+                    <button
+                      onClick={() => window.open(
+                        `https://maps.google.com/?q=${selectedReport.latitude},${selectedReport.longitude}`,
+                        '_blank'
+                      )}
+                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      📍 Open in Maps
+                    </button>
+                  )}
+                  
+                  {selectedReport.citizen_email && (
+                    <button
+                      onClick={() => window.open(`mailto:${selectedReport.citizen_email}`, '_blank')}
+                      className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      📧 Contact Reporter
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
