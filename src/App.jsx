@@ -9,6 +9,7 @@ import MapView from './pages/MapView'
 import AdminDashboard from './pages/AdminDashboard'
 import ImageDetectionPage from './pages/ImageDetectionPage'
 import ImageDetectionTest from './components/ImageDetectionTest'
+import SupabaseTest from './components/SupabaseTest'
 
 /**
  * Main App component with routing setup and theme provider
@@ -31,6 +32,7 @@ function App() {
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/ai-vision" element={<ImageDetectionPage />} />
               <Route path="/ai-vision-test" element={<ImageDetectionTest />} />
+              <Route path="/supabase-test" element={<SupabaseTest />} />
             </Routes>
           </main>
         </div>

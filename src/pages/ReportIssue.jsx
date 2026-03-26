@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
-import { supabase, storage } from '../services/supabase'
+import { supabase } from '../services/supabase'
 import SpeechToText from '../components/SpeechToText'
 import AdvancedLocationPicker from '../components/AdvancedLocationPicker'
 import Button from '../components/ui/Button'
@@ -150,13 +150,20 @@ const ReportIssue = () => {
   }
 
   /**
-   * Upload image to Supabase Storage
+   * Upload image to Supabase Storage with fallback
    * Enhanced with better error handling and logging
    * @param {string} imageDataUrl - Base64 image data
    * @returns {string} Public URL of uploaded image
    */
   const uploadImageToSupabase = async (imageDataUrl) => {
     try {
+      console.log('Starting image upload...')
+      
+      // Check if Supabase is properly configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        throw new Error('Supabase configuration missing. Please check environment variables.')
+      }
+      
       // Convert base64 to blob with error handling
       const response = await fetch(imageDataUrl)
       if (!response.ok) {
@@ -164,6 +171,12 @@ const ReportIssue = () => {
       }
       
       const blob = await response.blob()
+      console.log('Image blob created, size:', blob.size, 'bytes')
+
+      // Check blob size (Supabase has limits)
+      if (blob.size > 10 * 1024 * 1024) { // 10MB limit
+        throw new Error('Image too large. Please use an image smaller than 10MB.')
+      }
 
       // Generate unique filename with URL-safe characters
       const fileName = `report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.jpg`
@@ -172,40 +185,57 @@ const ReportIssue = () => {
 
       console.log('Uploading file:', filePath)
 
-      // Upload to Supabase Storage with retry logic
-      const { data: uploadData, error: uploadError } = await storage.upload(
-        'report-images', // bucket name
-        filePath,
-        blob,
-        {
+      // Upload to Supabase Storage using correct API
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('report-images')
+        .upload(filePath, blob, {
           cacheControl: '3600',
           upsert: false
-        }
-      )
+        })
 
       if (uploadError) {
         console.error('Upload error:', uploadError)
-        throw uploadError
+        
+        // Handle specific Supabase errors
+        if (uploadError.message.includes('bucket') || uploadError.message.includes('not found')) {
+          throw new Error('Storage bucket "report-images" not found. Please create it in Supabase dashboard.')
+        } else if (uploadError.message.includes('permission') || uploadError.message.includes('unauthorized')) {
+          throw new Error('Permission denied. Please check Supabase storage permissions.')
+        } else if (uploadError.message.includes('quota') || uploadError.message.includes('limit')) {
+          throw new Error('Storage quota exceeded. Please try again later.')
+        } else {
+          throw new Error(`Upload failed: ${uploadError.message}`)
+        }
       }
 
       console.log('Upload successful:', uploadData)
 
       // Get public URL with proper error handling
-      const { data } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from('report-images')
         .getPublicUrl(filePath)
 
-      if (!data || !data.publicUrl) {
+      if (!urlData || !urlData.publicUrl) {
         throw new Error('Failed to get public URL')
       }
 
-      console.log('Public URL:', data.publicUrl)
+      console.log('Public URL:', urlData.publicUrl)
 
-      return data.publicUrl
+      return urlData.publicUrl
 
     } catch (error) {
       console.error('Image upload error:', error)
-      throw new Error('Failed to upload image')
+      
+      // Return a more specific error message
+      if (error.message.includes('Supabase configuration missing')) {
+        throw new Error('Database not configured. Please contact administrator.')
+      } else if (error.message.includes('bucket')) {
+        throw new Error('Storage not configured. Please contact administrator.')
+      } else if (error.message.includes('permission')) {
+        throw new Error('Access denied. Please check your permissions.')
+      } else {
+        throw new Error(`Image upload failed: ${error.message}`)
+      }
     }
   }
 
