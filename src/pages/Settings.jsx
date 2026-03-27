@@ -172,10 +172,13 @@ const Settings = () => {
         supabase.from('notification_prefs').select('*').eq('user_id', user?.id).single()
       ])
 
+      console.log('Download data fetched:', { profile, issues, notificationPrefs })
+
       const userData = {
-        profile: profile.data,
-        issues: issues.data,
-        notificationPrefs: notificationPrefs.data
+        profile: profile.data || null,
+        issues: issues.data || [],
+        notificationPrefs: notificationPrefs.data || null,
+        exportedAt: new Date().toISOString()
       }
 
       // Trigger download
@@ -191,6 +194,7 @@ const Settings = () => {
 
       setSuccess('Your data has been downloaded')
     } catch (error) {
+      console.error('Download error:', error)
       setError('Failed to download data')
     } finally {
       setLoading(false)
