@@ -18,6 +18,11 @@ const Settings = () => {
   const { isDark, toggleTheme } = useTheme()
   const { user, logout, isAuthenticated, isGov, isAnonymous } = useAuth()
 
+  // Derived role variables
+  const isAdmin = user?.role === 'admin'
+  const isGovernment = isGov
+  const isCitizen = !isAnonymous && !isGov && !isAdmin
+
   // Form state
   const [formData, setFormData] = useState({
     fullName: user?.user_metadata?.full_name || '',
