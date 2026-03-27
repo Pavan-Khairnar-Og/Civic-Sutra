@@ -69,9 +69,9 @@ const Settings = () => {
 
       if (data) {
         setNotificationPrefs({
-          push_notifications: data.push_notifications || false,
-          email_alerts: data.email_alerts !== false,
-          location_sharing: data.location_sharing !== false
+          push_notifications: data.push_notifications ?? false,
+          email_alerts: data.email_alerts ?? true,
+          location_sharing: data.location_sharing ?? true
         })
       }
     } catch (error) {
@@ -404,7 +404,7 @@ const Settings = () => {
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={notificationPrefs.push_notifications}
+                          checked={!!notificationPrefs.push_notifications}
                           onChange={(e) => handleNotificationToggle('push_notifications', e.target.checked)}
                           className="sr-only peer"
                         />
@@ -420,7 +420,7 @@ const Settings = () => {
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={notificationPrefs.email_alerts}
+                          checked={!!notificationPrefs.email_alerts}
                           onChange={(e) => handleNotificationToggle('email_alerts', e.target.checked)}
                           className="sr-only peer"
                         />
@@ -436,7 +436,7 @@ const Settings = () => {
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={notificationPrefs.location_sharing}
+                          checked={!!notificationPrefs.location_sharing}
                           onChange={(e) => handleNotificationToggle('location_sharing', e.target.checked)}
                           className="sr-only peer"
                         />
