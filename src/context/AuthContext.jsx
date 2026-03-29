@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
 
   // Computed values
   const isAuthenticated = !!user
-  const isGov = user?.role === 'gov'
+  const isGov = user?.role === 'gov' || user?.role === 'government'
   const isAnonymous = !user || user?.role === 'anonymous'
 
   const value = {

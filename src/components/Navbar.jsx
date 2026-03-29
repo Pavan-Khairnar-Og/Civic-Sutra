@@ -4,7 +4,8 @@ import { useAuth } from '../context/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Menu, X, User, Settings, FileText, Map, Bell, Shield, 
-  ChevronDown, LogOut, Home as HomeIcon, AlertTriangle, User as UserIcon
+  ChevronDown, LogOut, Home as HomeIcon, AlertTriangle, User as UserIcon,
+  Sun, Moon
 } from 'lucide-react'
 
 const Navbar = () => {
@@ -14,6 +15,17 @@ const Navbar = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout, isAuthenticated, isGov, isAnonymous, loading } = useAuth()
+  const [isDarkMode, setIsDarkMode] = useState(
+    document.documentElement.classList.contains('dark')
+  );
+
+  useEffect(() => {
+    const handler = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    };
+    window.addEventListener('themechange', handler);
+    return () => window.removeEventListener('themechange', handler);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,7 +44,7 @@ const Navbar = () => {
 
   // Add Dashboard for government users
   if (isGov) {
-    navItems.push({ name: 'Dashboard', path: '/government', icon: Shield })
+    navItems.push({ name: 'Dashboard', path: '/dashboard', icon: Shield })
   }
 
   const isActive = (path) => {
@@ -49,13 +61,27 @@ const Navbar = () => {
 
   if (loading) {
     return (
-      <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-civic-parchment">
-        <div className="flex items-center justify-center h-full">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-civic-orange"></div>
+      <nav className="fixed top-0 left-0 right-0 z-50 h-16 bg-white border-b border-gray-100 dark:bg-[#1a1c1e] dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-orange-600 rounded-lg animate-pulse"></div>
+            <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
+          <div className="flex gap-4">
+            <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+            <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          </div>
         </div>
       </nav>
-    )
+    );
   }
+
+  // Only hide navbar on dedicated government portal pages (dashboard, admin issues, etc)
+  const isGovPortal = location.pathname.startsWith('/admin') || 
+                      location.pathname.startsWith('/dashboard') ||
+                      location.pathname.startsWith('/gov');
+  
+  if (isGov && isGovPortal) return null;
 
   return (
     <>
@@ -102,6 +128,39 @@ const Navbar = () => {
 
             {/* Right Side */}
             <div className="flex items-center gap-4">
+              {/* Theme Toggle Button */}
+              <button
+                id="theme-toggle-btn"
+                onClick={() => {
+                  const html = document.documentElement;
+                  const isDark = html.classList.contains('dark');
+                  if (isDark) {
+                    html.classList.remove('dark');
+                    html.removeAttribute('data-theme');
+                    localStorage.setItem('civicsutra_theme', 'light');
+                  } else {
+                    html.classList.add('dark');
+                    html.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('civicsutra_theme', 'dark');
+                  }
+                  window.dispatchEvent(new Event('themechange'));
+                  setIsDarkMode(!isDark);
+                }}
+                className={`transition-all duration-200 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border ${
+                  isDarkMode 
+                    ? 'border-[#2C2C2A] bg-[#1C1C1A] text-[#E8E4DC]' 
+                    : 'border-[#E8E4DC] bg-white text-[#1C1917]'
+                }`}
+                title="Toggle theme"
+              >
+                {isDarkMode ? (
+                  <Moon className="w-4 h-4 text-[#D4522A]" />
+                ) : (
+                  <Sun className="w-4 h-4 text-[#E9A84C]" />
+                )}
+                <span>{isDarkMode ? 'Dark' : 'Light'}</span>
+              </button>
+
               {/* Notification Bell (Gov Only) */}
               {isGov && (
                 <button className="relative p-2 text-civic-textSecondary hover:text-civic-orange transition-colors">

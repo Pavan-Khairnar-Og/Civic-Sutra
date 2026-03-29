@@ -14,7 +14,8 @@
     "dotenv": "^16.3.1",
     "express": "^4.22.1",
     "multer": "^1.4.5-lts.1",
-    "openai": "^4.104.0"
+    "openai": "^4.104.0",
+    "resend": "^6.9.4"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

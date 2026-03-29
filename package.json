@@ -29,6 +29,7 @@
     "react-leaflet": "^4.2.1",
     "react-router-dom": "^6.30.3",
     "recharts": "^3.8.1",
+    "resend": "^6.9.4",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
