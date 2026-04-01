@@ -210,6 +210,135 @@ const GovIssueDetail = () => {
             </div>
           </div>
 
+          {/* AI Intelligence Section */}
+          {issue.ai_description && (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6" style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '16px',
+            }}>
+              <p style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '1.5px',
+                color: '#94a3b8',
+                marginBottom: '16px'
+              }}>
+                AI INTELLIGENCE
+              </p>
+
+              {/* AI Observations */}
+              <div style={{ marginBottom: '16px' }}>
+                <p style={{
+                  fontSize: '11px',
+                  color: '#64748b',
+                  fontWeight: 600,
+                  marginBottom: '8px'
+                }}>
+                  🤖 AI OBSERVATIONS
+                </p>
+                <p style={{
+                  fontSize: '13px',
+                  color: '#cbd5e1',
+                  fontStyle: 'italic',
+                  lineHeight: 1.6,
+                  padding: '12px',
+                  background: 'rgba(0,0,0,0.2)',
+                  borderRadius: '8px',
+                  borderLeft: '3px solid #3b82f6'
+                }}>
+                  "{issue.ai_description}"
+                </p>
+              </div>
+
+              {/* Detected Objects */}
+              {issue.detectedObjects?.length > 0 && (
+                <div style={{ marginBottom: '16px' }}>
+                  <p style={{
+                    fontSize: '11px',
+                    color: '#64748b',
+                    fontWeight: 600,
+                    marginBottom: '8px'
+                  }}>
+                    DETECTED OBJECTS
+                  </p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {issue.detectedObjects.map((obj, i) => (
+                      <span key={i} style={{
+                        fontSize: '11px',
+                        padding: '3px 10px',
+                        background: 'rgba(59,130,246,0.15)',
+                        color: '#93c5fd',
+                        borderRadius: '20px',
+                        border: '1px solid rgba(59,130,246,0.3)'
+                      }}>
+                        {obj}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Confidence + Severity row */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '12px',
+                marginBottom: '16px'
+              }}>
+                <div>
+                  <p style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>
+                    CONFIDENCE
+                  </p>
+                  <div style={{
+                    background: 'rgba(255,255,255,0.1)',
+                    borderRadius: '4px',
+                    height: '6px',
+                    marginBottom: '4px'
+                  }}>
+                    <div style={{
+                      width: `${Math.round((issue.ai_confidence || 0) * 100)}%`,
+                      height: '100%',
+                      background: '#3b82f6',
+                      borderRadius: '4px'
+                    }} />
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#e2e8f0' }}>
+                    {Math.round((issue.ai_confidence || 0) * 100)}%
+                  </p>
+                </div>
+                <div>
+                  <p style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>
+                    AI SEVERITY
+                  </p>
+                  <span style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: issue.ai_severity === 'critical' ? '#ef4444' :
+                           issue.ai_severity === 'high' ? '#f97316' :
+                           issue.ai_severity === 'medium' ? '#eab308' : '#22c55e'
+                  }}>
+                    {(issue.ai_severity || 'unknown').toUpperCase()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Auto-routed department */}
+              {issue.ai_department && (
+                <div>
+                  <p style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
+                    AUTO-ROUTED TO
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#e2e8f0', fontWeight: 600 }}>
+                    {issue.ai_department} Department
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 space-y-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Case Metadata</h3>
             
