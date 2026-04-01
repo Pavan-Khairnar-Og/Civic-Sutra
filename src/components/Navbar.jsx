@@ -98,7 +98,7 @@ const Navbar = () => {
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 h-full flex items-center justify-between">
           <div className="flex items-center justify-between h-16">
-            {/* Logo */}
+            {/* Left: Logo */}
             <Link to="/home" className="flex items-center space-x-3 group">
               <div className="w-8 h-8 bg-civic-orange text-white rounded-xl flex items-center justify-center font-bold text-sm group-hover:scale-105 transition-transform">
                 CS
@@ -106,8 +106,8 @@ const Navbar = () => {
               <div className="text-civic-textPrimary font-semibold text-lg">CivicSutra</div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
+            {/* Center: Desktop Navigation */}
+            <div className="hidden md:flex lg:hidden items-center space-x-6">
               {navItems.map((item) => (
                 <Link
                   key={item.name}
@@ -129,7 +129,32 @@ const Navbar = () => {
               ))}
             </div>
 
-            {/* Right Side */}
+            {/* Center: Desktop Navigation (Large Screens) */}
+            <div className="hidden lg:flex items-center justify-center flex-1">
+              <div className="flex items-center gap-x-8">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    className="relative group"
+                  >
+                    <span className={`font-medium transition-colors ${
+                      isActive(item.path) 
+                        ? 'text-[#D4522A]' 
+                        : 'text-civic-textSecondary hover:text-civic-orange'
+                    }`}>
+                      {item.name}
+                      {item.name === 'Dashboard' && <Shield className="inline w-4 h-4 ml-1" />}
+                    </span>
+                    {isActive(item.path) && (
+                      <div className="bg-[#D4522A] w-1 h-1 rounded-full mx-auto mt-0.5"></div>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Controls */}
             <div className="flex items-center gap-2 sm:gap-4">
               {/* Theme Toggle Button */}
               <button
