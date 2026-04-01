@@ -153,17 +153,21 @@ const Login = () => {
         return;
       }
 
-      // Simplified user data - no role checking
+      // User data with login type for dashboard redirection
       const userData = {
         name: data.user.user_metadata?.full_name || data.user.email.split('@')[0],
         email: data.user.email,
         role: activeTab === 'government' ? 'gov' : 'citizen',
-        department: formData.department || ''
+        department: formData.department || '',
+        loginType: activeTab === 'government' ? 'gov' : 'citizen'
       };
 
       console.log('Login successful, userData:', userData);
       login(userData);
-      navigate('/home');
+      
+      // Redirect based on login type
+      const redirectPath = activeTab === 'government' ? '/dashboard' : '/home';
+      navigate(redirectPath);
     } catch (err) {
       console.error('Login error:', err);
       setAuthError('Something went wrong. Please try again.');
@@ -599,7 +603,7 @@ const Login = () => {
                       Signing in...
                     </div>
                   ) : (
-                    'Sign In'
+                    'Login as Citizen'
                   )}
                 </button>
 
@@ -743,7 +747,7 @@ const Login = () => {
                       <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                       </svg>
-                      Sign In as Government Employee
+                      Login as Government
                     </>
                   )}
                 </button>

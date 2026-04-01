@@ -18,7 +18,7 @@ import { MapPin, Calendar, User, AlertTriangle, Clock, CheckCircle, TrendingUp, 
  */
 const GovernmentDashboard = () => {
   const { t } = useTranslation()
-  const { isGov } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
@@ -343,7 +343,7 @@ const GovernmentDashboard = () => {
 
   const filteredReports = getFilteredReports()
 
-  if (!isGov) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

@@ -45,12 +45,18 @@ export const AuthProvider = ({ children }) => {
       role: userData.role || 'citizen'
     }
     localStorage.setItem('civicsutra_user', JSON.stringify(userWithRole))
+    
+    // Store login type separately for easy access
+    if (userData.loginType) {
+      localStorage.setItem('civicsutra_login_type', userData.loginType)
+    }
   }
 
   const logout = async () => {
     await supabase.auth.signOut()
     setUser(null)
     localStorage.removeItem('civicsutra_user')
+    localStorage.removeItem('civicsutra_login_type')
     window.location.href = '/login'
   }
 

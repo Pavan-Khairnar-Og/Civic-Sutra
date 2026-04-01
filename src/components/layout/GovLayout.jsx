@@ -9,7 +9,7 @@ import GovSidebar from './GovSidebar';
  * strictly for 'government' role users.
  */
 const GovLayout = () => {
-  const { isGov, loading } = useAuth();
+  const { user, loading } = useAuth();
   const isDark = document.documentElement.classList.contains('dark');
 
   useEffect(() => {
@@ -19,7 +19,7 @@ const GovLayout = () => {
   }, []);
 
   if (loading) return null;
-  if (!isGov) return null; // Role guard secondary check
+  if (!user) return null; // Check if user is authenticated instead of isGov
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
