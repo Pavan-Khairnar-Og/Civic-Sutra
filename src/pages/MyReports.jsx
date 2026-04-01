@@ -283,11 +283,79 @@ const MyReports = () => {
                     {report.ai_description && (
                       <div className="mb-3 bg-stone-50 dark:bg-[#4a4035]/50 border border-stone-100 dark:border-[#4a4035] rounded-lg p-3">
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-700 dark:text-[#c8bba6] mb-1">
-                          <span className="text-[#2A9D8F]">🔍</span> AI Analysis Summary
+                          <span className="text-[#2A9D8F]">🤖</span> AI Analysis
                         </div>
-                        <p className="text-stone-600 dark:text-[#a89880] text-sm italic">
-                          "{report.ai_description}"
-                        </p>
+                        
+                        {/* Issue Type and Severity */}
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              report.ai_severity === 'critical' ? 'bg-red-100 text-red-700' :
+                              report.ai_severity === 'high' ? 'bg-orange-100 text-orange-700' :
+                              report.ai_severity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-green-100 text-green-700'
+                            }`}>
+                              {(report.ai_issue_type || report.ai_issue_type || 'General').toUpperCase()}
+                            </span>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              report.ai_severity === 'critical' ? 'bg-red-100 text-red-700' :
+                              report.ai_severity === 'high' ? 'bg-orange-100 text-orange-700' :
+                              report.ai_severity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-green-100 text-green-700'
+                            }`}>
+                              {report.ai_severity?.toUpperCase() || 'MEDIUM'}
+                            </span>
+                          </div>
+                          <div className="text-stone-600 dark:text-[#a89880] text-xs">
+                            Confidence: {Math.round((report.ai_confidence || 0) * 100)}%
+                          </div>
+                        </div>
+
+                        {/* Confidence Bar */}
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                          <div 
+                            className="bg-[#2A9D8F] h-full transition-all duration-500"
+                            style={{ width: `${Math.round((report.ai_confidence || 0) * 100)}%` }}
+                          />
+                        </div>
+
+                        {/* AI Observations */}
+                        <div className="mt-2 pt-2 border-t border-stone-200 dark:border-[#4a4035]">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-700 dark:text-[#c8bba6] mb-1">
+                            <span className="text-[#2A9D8F]">🔍</span> AI Observations
+                          </div>
+                          <p className="text-stone-600 dark:text-[#a89880] text-sm italic leading-relaxed">
+                            "{report.ai_description}"
+                          </p>
+                        </div>
+
+                        {/* Detected Objects */}
+                        {(report.detectedObjects && report.detectedObjects.length > 0) ? (
+                          <div className="mt-2">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-700 dark:text-[#c8bba6] mb-1">
+                              <span className="text-[#2A9D8F]">🏷️</span> Detected Objects
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {(report.detectedObjects || report.ai_issue_type?.split('_') || []).map((obj, i) => (
+                                <span key={i} className="px-2 py-1 bg-stone-100 dark:bg-[#4a4035] text-stone-600 dark:text-[#a89880] rounded-full text-xs">
+                                  {obj}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          /* Fallback: show issue type as detected objects */
+                          <div className="mt-2">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-700 dark:text-[#c8bba6] mb-1">
+                              <span className="text-[#2A9D8F]">🏷️</span> Issue Type
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              <span className="px-2 py-1 bg-stone-100 dark:bg-[#4a4035] text-stone-600 dark:text-[#a89880] rounded-full text-xs">
+                                {(report.ai_issue_type || report.ai_issue_type || 'General').replace('_', ' ').toUpperCase()}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                     <p className="text-stone-600 dark:text-[#a89880] text-sm mb-3 line-clamp-2">

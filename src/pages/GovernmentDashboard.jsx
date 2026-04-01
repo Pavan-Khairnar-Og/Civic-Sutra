@@ -450,99 +450,169 @@ const MetricCard = ({ title, value, icon, trend, color = "text-gray-900" }) => (
 );
 
 const IssueRow = ({ report, onStatusUpdate }) => {
-  // Use DB priority_score directly, exactly 0-100, no frontend re-calculation
-  const score = Math.min(Math.round(report.priority_score || 0), 100);
-
-  const pillClass =
-    score >= 75 ? 'bg-[#fef2f2] text-[#dc2626]' :
-    score >= 55 ? 'bg-[#fff7ed] text-[#c2410c]' :
-    score >= 30 ? 'bg-[#fefce8] text-[#a16207]' :
+    // Use DB priority_score directly, exactly 0-100, no frontend re-calculation
+    const score = Math.min(Math.round(report.priority_score || 0), 100);
+    
+    const pillClass =
+      score >= 75 ? 'bg-[#fef2f2] text-[#dc2626]' :
+      score >= 55 ? 'bg-[#fff7ed] text-[#c2410c]' :
+      score >= 30 ? 'bg-[#fefce8] text-[#a16207]' :
                  'bg-[#f0fdf4] text-[#16a34a]';
 
-  const label =
-    score >= 75 ? 'Critical' :
-    score >= 55 ? 'High' :
-    score >= 30 ? 'Medium' : 'Low';
+    // Fix 3: Reporter name logic
+    const getReporterName = (issue) => {
+      if (issue.is_anonymous) return 'Anonymous';
+      const fullName = issue.profiles?.full_name;
+      if (fullName) return fullName.split(' ')[0]; // first name only
+      return 'Citizen';
+    };
 
-  // Fix 3: Reporter name logic
-  const getReporterName = (issue) => {
-    if (issue.is_anonymous) return 'Anonymous';
-    const fullName = issue.profiles?.full_name;
-    if (fullName) return fullName.split(' ')[0]; // first name only
-    return 'Citizen';
+    return (
+      <tr className="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors group">
+        <td className="px-6 py-4">
+          <div className="flex items-start gap-4">
+            <div>
+              <h3 className="font-semibold text-stone-900 dark:text-gray-100 text-lg mb-2">
+                {report.title || 'Untitled Issue'}
+              </h3>
+              <div className="space-y-2">
+                <p className="text-stone-600 dark:text-gray-400 text-sm">
+                  {report.description}
+                </p>
+                <div className="text-xs text-stone-500 dark:text-gray-500 mt-2">
+                  Reported: {new Date(report.created_at).toLocaleDateString()}
+                </div>
+                <div className="text-xs text-stone-500 dark:text-gray-500">
+                  ID: {report.id?.slice(0,8).toUpperCase()}
+                </div>
+              </div>
+            </div>
+            <div className="flex-1">
+              <span className={`inline-flex items-center justify-center
+                px-2 py-0.5 rounded-md text-xs font-bold
+                ${pillClass}`}>
+                {score}
+              </span>
+            </div>
+          </div>
+        </td>
+        <td className="px-6 py-4">
+          <div className="max-w-[240px]">
+            {/* Fix 2: Real title prominently displayed */}
+            <div className="font-medium text-stone-900 dark:text-gray-100 text-sm truncate max-w-[200px]">
+              {report.title || 'Untitled Issue'}
+            </div>
+          </div>
+        </td>
+        <td className="px-6 py-4">
+          <div>
+            {getReporterName(report)}
+          </div>
+        </td>
+        <td className="px-6 py-4">
+          <select 
+            value={report.status}
+            onChange={(e) => onStatusUpdate(report.id, e.target.value)}
+            className={`text-[11px] font-bold border-none rounded-full px-3 py-1 cursor-pointer focus:ring-2 focus:ring-blue-500 ${
+              report.status === 'resolved' ? 'bg-green-100 text-green-700' :
+              report.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+              'bg-yellow-100 text-yellow-700'
+            }`}
+          >
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </td>
+        <td className="px-6 py-4 text-xs text-gray-500 font-medium">
+          {new Date(report.created_at).toLocaleDateString()}
+        </td>
+        <td className="px-6 py-4 text-right">
+          <button 
+            onClick={() => window.location.href=`/admin/issue/${report.id}`}
+            className="text-xs font-bold text-blue-500 hover:text-blue-600 underline underline-offset-4"
+          >
+            Details
+          </button>
+        </td>
+      </tr>
+    );
   };
 
-  return (
-    <tr className="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors group">
-      <td className="px-6 py-4">
-        <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center justify-center
-                        px-2 py-0.5 rounded-md text-xs font-bold
-                        ${pillClass}`}>
-            {score}
-          </span>
-          <div className="w-16 h-1.5 rounded-full overflow-hidden
-                        bg-stone-100 dark:bg-[#3a4a42]">
-            <div style={{
-              width: `${score}%`,
-              background: pillClass.includes('dc2626') ? '#dc2626' :
-                          pillClass.includes('c2410c') ? '#c2410c' :
-                          pillClass.includes('a16207') ? '#d97706' : '#16a34a',
-              height: '100%',
-            }} />
+  // AI Intelligence Panel Component
+  const AIPanel = ({ report }) => {
+    if (!report.ai_description) return null;
+    
+    return (
+      <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">🤖</span>
+            <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">AI Intelligence Report</span>
+          </div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Auto-generated analysis from AI image processing
           </div>
         </div>
-      </td>
-      <td className="px-6 py-4">
-        <div className="max-w-[240px]">
-          {/* Fix 2: Real title prominently displayed */}
-          <div className="font-medium text-stone-900 dark:text-[#e8e0d5] text-sm truncate max-w-[200px]">
-            {report.title || 'Untitled Issue'}
+
+        <div className="space-y-4">
+          {/* Issue Classification */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Issue Type</div>
+              <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                {(report.ai_issue_type || report.issue_type || 'General').replace('_', ' ').toUpperCase()}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confidence</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {Math.round((report.ai_confidence || 0) * 100)}%
+              </div>
+            </div>
           </div>
-          <div className="text-xs text-stone-400 dark:text-[#6e5f50] mt-0.5">
-            {report.location || `ID: ${report.id?.slice(0,8).toUpperCase()}`}
+
+          {/* Severity */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Severity</div>
+              <div className={`text-2xl font-bold px-4 py-2 rounded-lg ${
+                report.ai_severity === 'critical' ? 'bg-red-100 text-red-700' :
+                report.ai_severity === 'high' ? 'bg-orange-100 text-orange-700' :
+                report.ai_severity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                'bg-green-100 text-green-700'
+              }`}>
+                {report.ai_severity?.toUpperCase() || 'MEDIUM'}
+              </div>
+            </div>
+          </div>
+
+          {/* AI Observations */}
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">🔍 AI Observations</div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 italic leading-relaxed">
+              "{report.ai_description}"
+            </p>
+          </div>
+
+          {/* Auto-routing */}
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">🎯 Auto-routed to</div>
+            <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              {report.ai_department || 'General Department'}
+            </div>
+          </div>
+
+          {/* Priority Score */}
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">📊 Priority Score</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              {Math.min(Math.round(report.priority_score || 0), 100)}/100
+            </div>
           </div>
         </div>
-      </td>
-      <td className="px-6 py-4">
-        <span className="text-[11px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-md">
-          {normalizeCategory(report.ai_issue_type || report.issue_type)}
-        </span>
-      </td>
-      <td className="px-6 py-4 text-xs text-stone-500 dark:text-[#a89880] font-medium">
-        {/* Fix 3 rendering */}
-        <div>
-          {getReporterName(report)}
-        </div>
-      </td>
-      <td className="px-6 py-4">
-        <select 
-          value={report.status}
-          onChange={(e) => onStatusUpdate(report.id, e.target.value)}
-          className={`text-[11px] font-bold border-none rounded-full px-3 py-1 cursor-pointer focus:ring-2 focus:ring-blue-500 ${
-            report.status === 'resolved' ? 'bg-green-100 text-green-700' :
-            report.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-            'bg-yellow-100 text-yellow-700'
-          }`}
-        >
-          <option value="pending">Pending</option>
-          <option value="in_progress">In Progress</option>
-          <option value="resolved">Resolved</option>
-        </select>
-      </td>
-      <td className="px-6 py-4 text-xs text-gray-500 font-medium">
-        {new Date(report.created_at).toLocaleDateString()}
-      </td>
-      <td className="px-6 py-4 text-right">
-        <button 
-          onClick={() => window.location.href=`/admin/issue/${report.id}`}
-          className="text-xs font-bold text-blue-500 hover:text-blue-600 underline underline-offset-4"
-        >
-          Details
-        </button>
-      </td>
-    </tr>
-  );
-};
+      </div>
+    );
+  };
 
 export default GovernmentDashboard;
