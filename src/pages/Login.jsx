@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
@@ -26,12 +26,32 @@ const Login = () => {
     department: ''
   })
 
-  // Tab positions for sliding indicator
-  const tabPositions = {
-    citizen: 0,
-    government: 33.33,
-    anonymous: 66.66
-  }
+  // Tab positions for sliding indicator - using pixel-based positioning for better alignment
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 })
+
+  // Update indicator position when tab changes
+  const updateIndicatorPosition = useCallback(() => {
+    const container = document.getElementById('tab-container')
+    const activeButton = container?.querySelector(`[data-tab="${activeTab}"]`)
+    
+    if (container && activeButton) {
+      const containerRect = container.getBoundingClientRect()
+      const buttonRect = activeButton.getBoundingClientRect()
+      
+      setIndicatorStyle({
+        left: buttonRect.left - containerRect.left,
+        width: buttonRect.width
+      })
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    updateIndicatorPosition()
+    
+    // Add resize listener for responsive behavior
+    window.addEventListener('resize', updateIndicatorPosition)
+    return () => window.removeEventListener('resize', updateIndicatorPosition)
+  }, [updateIndicatorPosition])
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -193,12 +213,13 @@ const Login = () => {
         >
           {/* Tab Navigation */}
           <div className="relative mb-8">
-            <div className="flex bg-civic-orangeLight rounded-full p-1 relative">
+            <div id="tab-container" className="flex bg-civic-orangeLight rounded-full p-1 relative">
               {['citizen', 'government', 'anonymous'].map((tab) => (
                 <button
                   key={tab}
+                  data-tab={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-3 px-4 rounded-full text-sm font-medium transition-all z-10 ${
+                  className={`flex-1 py-3 px-4 rounded-full text-sm font-medium transition-all z-10 relative ${
                     activeTab === tab
                       ? 'text-white'
                       : 'text-civic-textSecondary hover:text-civic-textPrimary'
@@ -212,9 +233,15 @@ const Login = () => {
               
               {/* Sliding Indicator */}
               <motion.div
-                className="absolute top-1 left-1 h-[calc(100%-8px)] bg-civic-orange rounded-full"
-                style={{ width: 'calc(33.33% - 4px)' }}
-                animate={{ x: `${tabPositions[activeTab]}%` }}
+                className="absolute top-1 h-[calc(100%-8px)] bg-civic-orange rounded-full"
+                style={{
+                  left: `${indicatorStyle.left}px`,
+                  width: `${indicatorStyle.width}px`
+                }}
+                animate={{
+                  left: `${indicatorStyle.left}px`,
+                  width: `${indicatorStyle.width}px`
+                }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
               />
             </div>
