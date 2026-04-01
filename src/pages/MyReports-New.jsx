@@ -114,7 +114,7 @@ const MyReports = () => {
     // Re-load when page gains focus
     window.addEventListener('focus', loadReports)
     return () => window.removeEventListener('focus', loadReports)
-  }, [user])
+  }, [user?.id]) // Only re-fetch when user ID actually changes
 
   // Filter and sort reports
   const filteredReports = useMemo(() => {
@@ -191,7 +191,35 @@ const MyReports = () => {
 
   // Get status styling
   const getStatusInfo = (status) => {
+    console.log(`🏷️ getStatusInfo called with:`, { status, type: typeof status })
+    
     const statusMap = {
+      // Lowercase values (what database actually has)
+      'pending': {
+        bg: 'bg-amber-100',
+        text: 'text-amber-800',
+        icon: Clock,
+        label: 'Pending'
+      },
+      'under_review': {
+        bg: 'bg-blue-100',
+        text: 'text-blue-800',
+        icon: Eye,
+        label: 'Under Review'
+      },
+      'in_progress': {
+        bg: 'bg-orange-100',
+        text: 'text-orange-800',
+        icon: Wrench,
+        label: 'In Progress'
+      },
+      'resolved': {
+        bg: 'bg-teal-100',
+        text: 'text-teal-800',
+        icon: Check,
+        label: 'Resolved'
+      },
+      // Title case values (fallback)
       'Pending': {
         bg: 'bg-amber-100',
         text: 'text-amber-800',
@@ -217,7 +245,10 @@ const MyReports = () => {
         label: 'Resolved'
       }
     }
-    return statusMap[status] || statusMap['Pending']
+    
+    const result = statusMap[status] || statusMap['pending']
+    console.log(`🏷️ getStatusInfo result:`, result)
+    return result
   }
 
   // Format date

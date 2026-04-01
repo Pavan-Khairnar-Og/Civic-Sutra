@@ -31,8 +31,10 @@ const MyReports = () => {
         // Fetch all reports from Supabase for now to debug
         let query = supabase.from('reports').select('*')
         
-        // For debugging, let's not filter by user initially to see all reports
-        // We can add filtering back once we confirm data is loading
+        // Handle both user_id and citizen_email for existing reports with null user_id
+        if (user?.id) {
+          query = query.or(`user_id.eq.${user.id},citizen_email.eq.${user.email}`)
+        }
         
         // Order by newest first
         query = query.order('created_at', { ascending: false })
@@ -46,9 +48,18 @@ const MyReports = () => {
         } else {
           console.log('=== MY REPORTS DEBUG ===')
           console.log('Total reports loaded:', data?.length || 0)
-          console.log('Reports:', data)
+          console.log('First report full object:', JSON.stringify(data[0], null, 2))
+          console.log('Status field check:', {
+            'report.status': data[0]?.status,
+            'report.Status': data[0]?.Status,
+            'report.issue_status': data[0]?.issue_status,
+            'allKeys': Object.keys(data[0] || {})
+          })
+          console.log('All reports status values:', data.map(r => ({ id: r.id, status: r.status })))
           console.log('Current user:', user)
           console.log('========================')
+          
+          // Set reports without any transformation to preserve original data
           setReports(data || [])
         }
         
@@ -64,7 +75,7 @@ const MyReports = () => {
     // Re-load when page gains focus (user returns from report page)
     window.addEventListener('focus', loadReports)
     return () => window.removeEventListener('focus', loadReports)
-  }, [user])
+  }, [user?.id]) // Only re-fetch when user ID actually changes
 
   // Calculate stats
   const totalReports = reports.length
@@ -74,6 +85,13 @@ const MyReports = () => {
 
   // Filter reports
   const filteredReports = reports.filter(report => {
+    console.log(`🔍 FILTERING REPORT ${report.id}:`, {
+      'report.status': report.status,
+      'filter.status': filter.status,
+      'status match': report.status === filter.status,
+      'will pass': filter.status === 'all' || report.status === filter.status
+    })
+    
     if (filter.status !== 'all' && report.status !== filter.status) return false
     if (filter.category !== 'all' && report.ai_issue_type !== filter.category) return false
     return true
@@ -90,13 +108,31 @@ const MyReports = () => {
   }
 
   const getStatusColor = (status) => {
+    console.log(`🎨 getStatusColor called with:`, {
+      'status': status,
+      'type': typeof status,
+      'length': status?.length,
+      'trimmed': status?.trim(),
+      'lowercase': status?.toLowerCase?.trim(),
+      'original': JSON.stringify(status)
+    })
+    
     const colors = {
+      // Lowercase values (what database actually has)
       'pending': 'bg-[#FEF6E7] text-stone-900 dark:text-[#E9A84C]',
       'under_review': 'bg-[#E8F6F4] text-stone-900 dark:text-[#2A9D8F]',
       'in_progress': 'bg-[#FEF3C7] text-stone-900 dark:text-[#D4522A]',
-      'resolved': 'bg-[#E8F6F4] text-stone-900 dark:text-[#2A9D8F]'
+      'resolved': 'bg-[#E8F6F4] text-stone-900 dark:text-[#2A9D8F]',
+      // Title case values (fallback)
+      'Pending': 'bg-[#FEF6E7] text-stone-900 dark:text-[#E9A84C]',
+      'Under Review': 'bg-[#E8F6F4] text-stone-900 dark:text-[#2A9D8F]',
+      'In Progress': 'bg-[#FEF3C7] text-stone-900 dark:text-[#D4522A]',
+      'Resolved': 'bg-[#E8F6F4] text-stone-900 dark:text-[#2A9D8F]'
     }
-    return colors[status] || colors['pending']
+    
+    const result = colors[status] || colors['resolved'] // Default to resolved, not pending
+    console.log(`🎨 getStatusColor result:`, result)
+    return result
   }
 
   const formatDate = (dateString) => {
@@ -199,10 +235,10 @@ const MyReports = () => {
                       className="w-full bg-stone-50 dark:bg-[#4a4035] border border-stone-200 dark:border-[#4a4035] rounded-xl px-4 py-2.5 text-stone-900 dark:text-[#e8e0d5] focus:border-orange-400 outline-none"
                     >
                       <option value="all">All Status</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Under Review">Under Review</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Resolved">Resolved</option>
+                      <option value="pending">Pending</option>
+                      <option value="under_review">Under Review</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="resolved">Resolved</option>
                     </select>
                   </div>
                   <div>
@@ -274,10 +310,22 @@ const MyReports = () => {
                         {report.ai_severity?.toUpperCase() || 'MEDIUM'}
                       </span>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(report.status)}`}>
+                        {(() => {
+                          console.log(`🏷️ STATUS BADGE DEBUG for report ${report.id}:`, {
+                            'report.status': report.status,
+                            'getStatusColor result': getStatusColor(report.status),
+                            'status type': typeof report.status,
+                            'status length': report.status?.length,
+                            'resolved check': report.status === 'resolved',
+                            'pending check': report.status === 'pending',
+                            'final display text': report.status ? report.status.replace('_', ' ').toUpperCase() : 'PENDING'
+                          })
+                          return null
+                        })()}
                         {report.status === 'resolved' && <CheckCircle className="w-3 h-3" />}
                         {(report.status === 'in_progress' || report.status === 'under_review') && <Clock className="w-3 h-3" />}
                         {report.status === 'pending' && <AlertTriangle className="w-3 h-3" />}
-                        {report.status?.replace('_', ' ').toUpperCase() || 'PENDING'}
+                        {report.status ? report.status.replace('_', ' ').toUpperCase() : 'PENDING'}
                       </span>
                     </div>
                     {report.ai_description && (
