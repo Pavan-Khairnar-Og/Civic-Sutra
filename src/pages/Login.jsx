@@ -130,28 +130,39 @@ const Login = () => {
       const checkGovernmentAccess = async (user) => {
         // Check 1: user metadata (most reliable, set at signup)
         const meta = user.user_metadata || {};
-        if (meta.user_type === 'government') {
-          console.log("Gov access granted via metadata");
-          return { isGov: true, department: meta.department };
+        console.log("User metadata:", meta);
+        
+        if (meta.user_type === 'government' || meta.role === 'government') {
+          return { 
+            isGov: true, 
+            department: meta.department 
+          };
         }
 
-        // Check 2: profiles table (fallback if metadata missing)
+        // Check 2: profiles table — check BOTH role and user_type columns
         try {
-          const { data: profile, error } = await supabase
+          const { data: profile } = await supabase
             .from('profiles')
-            .select('user_type, department')
+            .select('role, user_type, department')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
 
-          if (!error && profile?.user_type === 'government') {
-            console.log("Gov access granted via profile");
-            return { isGov: true, department: profile.department };
+          console.log("Profile found:", profile);
+
+          if (
+            profile?.role === 'government' || 
+            profile?.role === 'admin' ||
+            profile?.user_type === 'government'
+          ) {
+            return { 
+              isGov: true, 
+              department: profile.department 
+            };
           }
         } catch (e) {
-          console.warn("Profile lookup failed:", e.message);
+          console.warn("Profile check failed:", e.message);
         }
 
-        console.log("No gov access found for user:", user.id);
         return { isGov: false, department: null };
       };
 
@@ -253,7 +264,8 @@ const Login = () => {
           await supabase.from('profiles').upsert({
             id: data.user.id,
             email,
-            user_type: 'government',
+            role: 'government',        // ← add this
+            user_type: 'government',   // ← keep this
             department: selectedDepartment,
             phone,
             created_at: new Date().toISOString()
