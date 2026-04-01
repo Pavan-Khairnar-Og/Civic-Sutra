@@ -20,6 +20,7 @@ import ImageDetectionTest from './components/ImageDetectionTest'
 import SupabaseTest from './components/SupabaseTest'
 import SupabaseTestGuide from './components/SupabaseTestGuide'
 import ImageAnalysisTest from './components/ImageAnalysisTest'
+import './i18n/i18n' // Initialize i18n
 
 /**
  * Main App component with modern design system and authentication

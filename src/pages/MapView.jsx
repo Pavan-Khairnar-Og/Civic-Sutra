@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../services/supabase'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import { Search, X, ChevronLeft, ChevronRight, MapPin, ZoomIn, ZoomOut, Maximize2, Target, Filter, Calendar } from 'lucide-react'
@@ -247,13 +248,13 @@ const sampleReports = [
 
 // Department categories with colors
 const categories = [
-  { id: 'Water Supply', name: 'Water Supply', icon: '💧', color: '#0077B6' },
-  { id: 'Roads & Footpaths', name: 'Roads & Footpaths', icon: '🚧', color: '#6B4226' },
-  { id: 'Street Lighting', name: 'Street Lighting', icon: '💡', color: '#F4A261' },
-  { id: 'Sanitation & Waste', name: 'Sanitation & Waste', icon: '🗑️', color: '#4A4E69' },
-  { id: 'Parks & Gardens', name: 'Parks & Gardens', icon: '🌳', color: '#2A9D8F' },
-  { id: 'Public Safety', name: 'Public Safety', icon: '🚨', color: '#C1121F' },
-  { id: 'Municipal Administration', name: 'Municipal Administration', icon: '🏢', color: '#6B6560' }
+  { id: 'water_supply', name: 'Water Supply', icon: '💧', color: '#0077B6' },
+  { id: 'roads_footpaths', name: 'Roads & Footpaths', icon: '🚧', color: '#6B4226' },
+  { id: 'street_lighting', name: 'Street Lighting', icon: '💡', color: '#F4A261' },
+  { id: 'sanitation_waste', name: 'Sanitation & Waste', icon: '🗑️', color: '#4A4E69' },
+  { id: 'parks_gardens', name: 'Parks & Gardens', icon: '🌳', color: '#2A9D8F' },
+  { id: 'public_safety', name: 'Public Safety', icon: '🚨', color: '#C1121F' },
+  { id: 'municipal_administration', name: 'Municipal Administration', icon: '🏢', color: '#6B6560' }
 ]
 
 const severities = [
@@ -262,6 +263,31 @@ const severities = [
   { id: 'medium', name: 'Medium', color: '#D97706' },
   { id: 'low', name: 'Low', color: '#059669' }
 ]
+
+// Helper function to translate category names
+const getCategoryTranslation = (categoryId, t) => {
+  const categoryKey = categoryId.replace(/[^a-z0-9]/g, '_').toLowerCase();
+  return t(`category.${categoryKey}`);
+};
+
+// Helper function to translate severity names
+const getSeverityTranslation = (severityId, t) => {
+  return t(`reportForm.${severityId}`);
+};
+
+// Helper function to map database category names to translation keys
+const mapCategoryToTranslationKey = (categoryName) => {
+  const categoryMapping = {
+    'Water Supply': 'water_supply',
+    'Roads & Footpaths': 'roads_footpaths', 
+    'Street Lighting': 'street_lighting',
+    'Sanitation & Waste': 'sanitation_waste',
+    'Parks & Gardens': 'parks_gardens',
+    'Public Safety': 'public_safety',
+    'Municipal Administration': 'municipal_administration'
+  };
+  return categoryMapping[categoryName] || categoryName.replace(/[^a-z0-9]/g, '_').toLowerCase();
+};
 
 const statuses = [
   { id: 'pending', name: 'Pending', color: '#F59E0B' },
@@ -272,19 +298,25 @@ const statuses = [
 
 // Custom marker component
 const createCustomMarker = (category, severity) => {
-  const categoryInfo = categories.find(c => c.id === category)
-  const severityInfo = severities.find(s => s.id === severity)
+  // Handle both old format ("Water Supply") and new format ("water_supply")
+  const categoryKey = mapCategoryToTranslationKey(category);
+  const categoryInfo = categories.find(c => c.id === category || c.id === categoryKey) || categories[0];
+  const severityInfo = severities.find(s => s.id === severity) || severities[0];
+  
+  // Fallback colors if category not found
+  const defaultCategoryColor = '#6B6560';
+  const defaultSeverityColor = '#F59E0B';
   
   const svgIcon = `
     <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
       <path d="M16 0C7.16 0 0 7.16 0 16c0 2.89.87 5.56 2.34 7.78L16 40l13.66-16.22C31.13 21.56 32 18.89 32 16 32 7.16 24.84 0 16 0z" 
-            fill="${categoryInfo.color}" 
+            fill="${categoryInfo?.color || defaultCategoryColor}" 
             stroke="#fff" 
             stroke-width="2"/>
       <text x="16" y="20" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="12" font-weight="bold">
-        ${categoryInfo.icon}
+        ${categoryInfo?.icon || '📍'}
       </text>
-      <circle cx="26" cy="6" r="4" fill="${severityInfo.color}" stroke="#fff" stroke-width="1"/>
+      <circle cx="26" cy="6" r="4" fill="${severityInfo?.color || defaultSeverityColor}" stroke="#fff" stroke-width="1"/>
     </svg>
   `
   
@@ -495,19 +527,20 @@ function MapLegend() {
 }
 
 // Issue count display
-function IssueCount({ count }) {
+function IssueCount({ count, t }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-[#D4522A] text-white px-5 py-2 rounded-full text-sm font-medium shadow-lg"
     >
-      Showing {count} issues
+      {t('mapLabels.showing_issues', { count })}
     </motion.div>
   )
 }
 
 const MapView = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuth()
   const mapRef = useRef()
@@ -583,9 +616,12 @@ const MapView = () => {
         }
       }
       
-      // Category filter
-      if (selectedCategories.length > 0 && !selectedCategories.includes(report.ai_issue_type)) {
-        return false
+      // Category filter - handle both old format ("Water Supply") and new format ("water_supply")
+      if (selectedCategories.length > 0) {
+        const reportCategoryKey = mapCategoryToTranslationKey(report.ai_issue_type);
+        if (!selectedCategories.includes(report.ai_issue_type) && !selectedCategories.includes(reportCategoryKey)) {
+          return false;
+        }
       }
       
       // Severity filter
@@ -642,7 +678,10 @@ const MapView = () => {
   const categoryCounts = useMemo(() => {
     return categories.map(category => ({
       ...category,
-      count: filteredReports.filter(r => r.ai_issue_type === category.id).length
+      count: filteredReports.filter(r => 
+        r.ai_issue_type === category.id || 
+        mapCategoryToTranslationKey(r.ai_issue_type) === category.id
+      ).length
     }))
   }, [filteredReports])
 
@@ -770,7 +809,9 @@ const MapView = () => {
           {/* Markers */}
           {viewMode === 'pins' || viewMode === 'both' ? (
             filteredReports.map(report => {
-              const categoryInfo = categories.find(c => c.id === report.ai_issue_type) || categories[0];
+              // Handle both old format ("Water Supply") and new format ("water_supply")
+              const categoryKey = mapCategoryToTranslationKey(report.ai_issue_type);
+              const categoryInfo = categories.find(c => c.id === report.ai_issue_type || c.id === categoryKey) || categories[0];
               const deptIcon = categoryInfo.icon;
               const deptColor = categoryInfo.color;
               const deptColorLight = `${categoryInfo.color}20`;
@@ -854,7 +895,7 @@ const MapView = () => {
       <MapLegend />
 
       {/* Issue Count */}
-      <IssueCount count={filteredReports.length} />
+      <IssueCount count={filteredReports.length} t={t} />
 
       {/* Sidebar */}
       <AnimatePresence>
@@ -869,7 +910,7 @@ const MapView = () => {
             <div className="p-6" style={{ minWidth: '300px' }}>
               {/* Header */}
               <div className="mb-6">
-                <h2 className="text-lg font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-1">Map Filters</h2>
+                <h2 className="text-lg font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-1">{t('map.mapView')}</h2>
                 <p className="text-sm text-[#6B6560]">Showing {filteredReports.length} issues</p>
               </div>
 
@@ -879,7 +920,7 @@ const MapView = () => {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B6560]" />
                   <input
                     type="text"
-                    placeholder="Search location or title..."
+                    placeholder={t('map.filterByCategory')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 text-sm rounded-xl bg-white border border-[#E8E4DC] text-[#1C1917] dark:bg-[#111110] dark:border-[#2C2C2A] dark:text-[#E8E4DC] focus:outline-none focus:ring-2 focus:ring-[#D4522A]/20"
@@ -889,7 +930,7 @@ const MapView = () => {
 
               {/* Category Filter */}
               <div className="mb-6 bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
-                <h3 className="font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-3">Categories</h3>
+                <h3 className="font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-3">{t('map.filterByCategory')}</h3>
                 <div className="space-y-2">
                   {categoryCounts.map(category => (
                     <label key={category.id} className="flex items-center gap-2 cursor-pointer">
@@ -900,7 +941,7 @@ const MapView = () => {
                         className="rounded border-[#E8E4DC] dark:border-[#2C2C2A] text-[#D4522A] focus:ring-[#D4522A]"
                       />
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }}></div>
-                      <span className="text-sm text-[#1C1917] dark:text-[#E8E4DC]">{category.name}</span>
+                      <span className="text-sm text-[#1C1917] dark:text-[#E8E4DC]">{getCategoryTranslation(category.id, t)}</span>
                       <span className="text-xs text-[#6B6560] bg-white border border-[#E8E4DC] dark:bg-[#2C2C2A] dark:border-[#2C2C2A] px-1.5 py-0.5 rounded-full ml-auto">
                         {category.count}
                       </span>
@@ -912,20 +953,20 @@ const MapView = () => {
                     onClick={() => setSelectedCategories(categories.map(c => c.id))}
                     className="text-xs text-[#D4522A] hover:text-[#B8441F] font-medium transition-colors"
                   >
-                    Select All
+                    {t('mapLabels.select_all')}
                   </button>
                   <button
                     onClick={() => setSelectedCategories([])}
                     className="text-xs text-[#D4522A] hover:text-[#B8441F] font-medium transition-colors"
                   >
-                    Deselect All
+                    {t('mapLabels.deselect_all')}
                   </button>
                 </div>
               </div>
 
               {/* Severity Filter */}
               <div className="mb-6 bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
-                <h3 className="font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-3">Severity</h3>
+                <h3 className="font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-3">{t('issue.severity')}</h3>
                 <div className="flex flex-wrap gap-2">
                   {severities.map(severity => {
                     const isActive = selectedSeverities.includes(severity.id);
@@ -939,7 +980,7 @@ const MapView = () => {
                             : 'bg-white text-[#6B6560] border-[#E8E4DC] dark:bg-[#2C2C2A] dark:border-[#2C2C2A] dark:text-[#6B6560]'
                         }`}
                       >
-                        {severity.name}
+                        {getSeverityTranslation(severity.id, t)}
                       </button>
                     )
                   })}

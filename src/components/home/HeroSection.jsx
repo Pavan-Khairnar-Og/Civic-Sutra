@@ -1,9 +1,11 @@
 import React from 'react';
 import { motion, useTransform, useScroll } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight, MapPin } from 'lucide-react';
 
 const HeroSection = () => {
+  const { t } = useTranslation();
   const { scrollYProgress } = useScroll();
   const dashboardY = useTransform(scrollYProgress, [0, 0.3], [80, 0]);
   const dashboardRotateX = useTransform(scrollYProgress, [0, 0.3], [6, 0]);
@@ -31,7 +33,7 @@ const HeroSection = () => {
 
         {/* Main Heading */}
         <div className="mb-8">
-          {["Your City.", "Your Voice.", "Real Change."].map((line, index) => (
+          {t('home.heroTitle').split('. ').map((line, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 30 }}
@@ -41,7 +43,7 @@ const HeroSection = () => {
               <h1 className={`serif text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight ${
                 index === 1 ? 'text-[#D4522A]' : 'text-[#1C1917]'
               }`}>
-                {line}
+                {line}{index < 2 ? '.' : ''}
               </h1>
             </motion.div>
           ))}
@@ -54,7 +56,7 @@ const HeroSection = () => {
           transition={{ duration: 0.8, delay: 0.5 }}
           className="text-civic-textSecondary text-lg max-w-2xl mx-auto text-center mb-12"
         >
-          CivicSutra connects citizens with local government. Report issues, track progress, and see your city improve — together.
+          {t('home.heroSubtitle')}
         </motion.p>
 
         {/* CTA Buttons */}
@@ -68,14 +70,13 @@ const HeroSection = () => {
             to="/report"
             className="bg-[#D4522A] hover:bg-[#B8441F] text-white font-medium text-base px-8 py-3.5 rounded-full flex items-center gap-2 transition-all duration-200 hover:shadow-[0_8px_24px_rgba(212,82,42,0.35)]"
           >
-            Report an Issue <ArrowRight size={18} />
+            {t('home.reportIssue')} <ArrowRight size={18} />
           </Link>
           <Link
             to="/map"
             className="bg-white border border-civic-muted text-civic-textPrimary rounded-full px-8 py-3.5 font-medium text-base hover:bg-civic-muted transition-all duration-200 flex items-center gap-2"
           >
-            <MapPin className="w-4 h-4" />
-            Explore the Map
+            {t('home.exploreMap')}
           </Link>
         </motion.div>
 

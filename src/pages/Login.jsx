@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { useTranslation } from 'react-i18next'
 import { IconFingerprint } from '@tabler/icons-react'
 import { fadeUp, slideInRight, scaleIn } from '../lib/animations.jsx'
 import { supabase } from '../services/supabase'
@@ -11,6 +12,7 @@ import { supabase } from '../services/supabase'
  * Split-screen design with role selection and beautiful SVG illustration
  */
 const Login = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { login, isAuthenticated, isGov, isAnonymous } = useAuth()
   
@@ -29,13 +31,38 @@ const Login = () => {
     department: ''
   })
 
+// Tab positions for sliding indicator - using pixel-based positioning for better alignment
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 })
+
   // Government registration state
   const [showGovRegistration, setShowGovRegistration] = useState(false)
   const [regLoading, setRegLoading] = useState(false)
   const [regError, setRegError] = useState(null)
   const [regSuccess, setRegSuccess] = useState(false)
 
-  const tabs = ['Citizen', 'Government', 'Anonymous'];
+  // Update indicator position when tab changes
+  const updateIndicatorPosition = useCallback(() => {
+    const container = document.getElementById('tab-container')
+    const activeButton = container?.querySelector(`[data-tab="${activeTab}"]`)
+    
+    if (container && activeButton) {
+      const containerRect = container.getBoundingClientRect()
+      const buttonRect = activeButton.getBoundingClientRect()
+      
+      setIndicatorStyle({
+        left: buttonRect.left - containerRect.left,
+        width: buttonRect.width
+      })
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    updateIndicatorPosition()
+    
+    // Add resize listener for responsive behavior
+    window.addEventListener('resize', updateIndicatorPosition)
+    return () => window.removeEventListener('resize', updateIndicatorPosition)
+  }, [updateIndicatorPosition])
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -488,50 +515,39 @@ const Login = () => {
           variants={fadeUp}
         >
           {/* Tab Navigation */}
-          <div style={{
-            position: 'relative',
-            display: 'flex',
-            background: '#f9ede8',
-            borderRadius: '999px',
-            padding: '4px',
-            gap: '0',
-            width: '100%',
-            marginBottom: '2rem',
-          }}>
-            {/* Sliding pill */}
-            <div style={{
-              position: 'absolute',
-              top: '4px',
-              bottom: '4px',
-              left: `calc(${tabs.indexOf(activeTab === 'citizen' ? 'Citizen' : activeTab === 'government' ? 'Government' : 'Anonymous')} * 33.333% + 4px)`,
-              width: 'calc(33.333% - 4px)',
-              background: '#c2410c',
-              borderRadius: '999px',
-              transition: 'left 0.2s ease',
-              zIndex: 0,
-            }} />
-            {tabs.map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab === 'Citizen' ? 'citizen' : tab === 'Government' ? 'government' : 'anonymous')}
+          <div className="relative mb-8">
+            <div id="tab-container" className="flex bg-civic-orangeLight rounded-full p-1 relative">
+              {['citizen', 'government', 'anonymous'].map((tab) => (
+                <button
+                  key={tab}
+                  data-tab={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 py-3 px-4 rounded-full text-sm font-medium transition-all z-10 relative ${
+                    activeTab === tab
+                      ? 'text-white'
+                      : 'text-civic-textSecondary hover:text-civic-textPrimary'
+                  }`}
+                >
+                  {tab === 'citizen' && t('auth.citizen')}
+                  {tab === 'government' && t('auth.government')}
+                  {tab === 'anonymous' && t('auth.anonymous')}
+                </button>
+              ))}
+              
+              {/* Sliding Indicator */}
+              <motion.div
+                className="absolute top-1 h-[calc(100%-8px)] bg-civic-orange rounded-full"
                 style={{
-                  flex: 1,
-                  padding: '10px 0',
-                  border: 'none',
-                  background: 'transparent',
-                  borderRadius: '999px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  color: (activeTab === 'citizen' && tab === 'Citizen') || (activeTab === 'government' && tab === 'Government') || (activeTab === 'anonymous' && tab === 'Anonymous') ? '#ffffff' : '#78716c',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  zIndex: 1,
-                  transition: 'color 0.2s',
+                  left: `${indicatorStyle.left}px`,
+                  width: `${indicatorStyle.width}px`
                 }}
-              >
-                {tab}
-              </button>
-            ))}
+                animate={{
+                  left: `${indicatorStyle.left}px`,
+                  width: `${indicatorStyle.width}px`
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              />
+            </div>
           </div>
 
           {/* Form Content */}

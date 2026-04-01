@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   CloudUpload, X, MapPin, CheckCircle, AlertTriangle, Clock, 
@@ -44,6 +45,7 @@ const normalizeConfidence = (c) => {
 };
 
 const ReportIssue = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, isAnonymous } = useAuth()
   const [currentStep, setCurrentStep] = useState(1)
@@ -581,26 +583,26 @@ const ReportIssue = () => {
   // Preview card component
   const PreviewCard = () => (
     <div className="sticky top-24 bg-white rounded-2xl border border-civic-muted p-6">
-      <h3 className="font-semibold text-civic-textPrimary mb-4">Issue Preview</h3>
+      <h3 className="font-semibold text-civic-textPrimary mb-4">{t('issue.issueDetails')}</h3>
       
       <div className="space-y-3">
         <div>
-          <div className="text-sm text-civic-textSecondary">Title</div>
+          <div className="text-sm text-civic-textSecondary">{t('issue.title')}</div>
           <div className="font-medium text-civic-textPrimary">
-            {formData.title || 'Not filled yet'}
+            {formData.title || t('reportForm.issueTitle')}
           </div>
         </div>
 
         {aiClassification && (
           <>
             <div>
-              <div className="text-sm text-civic-textSecondary">Department</div>
+              <div className="text-sm text-civic-textSecondary">{t('dashboard.analytics')}</div>
               <div className="font-medium text-civic-textPrimary">
                 {aiClassification.category}
               </div>
             </div>
             <div>
-              <div className="text-sm text-civic-textSecondary">Severity</div>
+              <div className="text-sm text-civic-textSecondary">{t('issue.severity')}</div>
               <div className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getSeverityColor(aiClassification.severity)}`}>
                 {aiClassification.severity.toUpperCase()}
               </div>
@@ -609,9 +611,9 @@ const ReportIssue = () => {
         )}
 
         <div>
-          <div className="text-sm text-civic-textSecondary">Location</div>
+          <div className="text-sm text-civic-textSecondary">{t('issue.location')}</div>
           <div className="font-medium text-civic-textPrimary">
-            {formData.address || 'Not set'}
+            {formData.address || t('reportForm.enterAddress')}
           </div>
         </div>
 
@@ -714,10 +716,10 @@ const ReportIssue = () => {
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="serif text-4xl font-bold text-civic-textPrimary mb-2">
-            Report an Issue
+            {t('issue.reportIssue')}
           </h1>
           <p className="text-civic-textSecondary">
-            Help us improve your city by reporting issues that need attention
+            {t('home.step1Desc')}
           </p>
         </div>
 
@@ -744,11 +746,11 @@ const ReportIssue = () => {
                     {/* Issue Title */}
                     <div>
                       <label className="block font-medium text-civic-textPrimary mb-2">
-                        What's the problem?
+                        {t('issue.whatsTheProblem')}
                       </label>
                       <input
                         type="text"
-                        placeholder="e.g. Broken streetlight near Shivaji Park..."
+                        placeholder={t('reportForm.issueTitle')}
                         value={formData.title}
                         onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                         className="w-full bg-white border border-civic-muted rounded-xl px-4 py-3 focus:border-[#D4522A] outline-none ring-2 ring-[#FBF0EB] transition-colors"
@@ -758,11 +760,11 @@ const ReportIssue = () => {
                     {/* Description */}
                     <div>
                       <label className="block font-medium text-civic-textPrimary mb-2">
-                        Description
+                        {t('issue.description')}
                       </label>
                       <textarea
                         rows={4}
-                        placeholder="Describe issue in detail — when did you notice it? How severe is it?"
+                        placeholder={t('issue.describeIssue')}
                         value={formData.description}
                         onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                         className="w-full bg-white border border-civic-muted rounded-xl px-4 py-3 focus:border-[#D4522A] outline-none ring-2 ring-[#FBF0EB] transition-colors resize-none"
@@ -819,7 +821,7 @@ const ReportIssue = () => {
                     {/* Image Upload */}
                     <div>
                       <label className="block font-medium text-civic-textPrimary mb-2">
-                        Photos (optional)
+                        {t('issue.addPhotos')}
                       </label>
                       <div
                         className={`border-2 rounded-2xl p-10 text-center transition-colors cursor-pointer ${
@@ -1417,10 +1419,10 @@ const ReportIssue = () => {
                         {isSubmitting ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            Submitting...
+                            {t('common.loading')}
                           </>
                         ) : (
-                          'Submit Report'
+                          t('reportForm.submitReport')
                         )}
                       </button>
                     </div>

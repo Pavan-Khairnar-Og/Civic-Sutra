@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { 
   LayoutDashboard, 
   ListTodo, 
@@ -14,16 +15,17 @@ import {
 } from 'lucide-react';
 
 const GovSidebar = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const isDark = document.documentElement.classList.contains('dark');
 
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'All Issues', path: '/admin/issues', icon: ListTodo }, // Adjust to match real routes later if needed
-    { name: 'Map View', path: '/admin/map', icon: MapIcon },
-    { name: 'System Settings', path: '/settings', icon: Settings },
+    { name: t('navigation.dashboard'), path: '/dashboard', icon: LayoutDashboard },
+    { name: t('dashboard.allIssues'), path: '/admin/issues', icon: ListTodo },
+    { name: t('navigation.mapView'), path: '/admin/map', icon: MapIcon },
+    { name: t('dashboard.systemSettings'), path: '/settings', icon: Settings },
   ];
 
   const toggleTheme = () => {
@@ -45,13 +47,13 @@ const GovSidebar = () => {
     <aside className="w-[240px] bg-[#1a2e24] flex flex-col h-full text-white/90">
       {/* Sidebar Header */}
       <div className="p-6">
-        <div className="flex items-center gap-3 mb-1">
+        <Link to="/" className="flex items-center gap-3 mb-1 hover:bg-white/5 rounded-lg p-2 -m-2 transition-colors">
           <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
             <ShieldCheck className="text-[#DA532D]" size={20} />
           </div>
           <span className="font-bold text-lg tracking-tight">CivicSutra</span>
-        </div>
-        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest pl-11">Government Portal</p>
+        </Link>
+        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest pl-11">{t('portals.governmentPortal')}</p>
       </div>
 
       {/* Navigation */}

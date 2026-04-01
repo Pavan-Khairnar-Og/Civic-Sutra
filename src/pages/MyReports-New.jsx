@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../services/supabase'
 import { 
   Search, PlusCircle, X, MapPin, Clock, Eye, Wrench, Check, 
@@ -14,6 +15,7 @@ import {
  * Displays user's submitted civic issue reports with filtering, search, and detail drawer
  */
 const MyReports = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuth()
   const [reports, setReports] = useState([])
@@ -287,15 +289,15 @@ const MyReports = () => {
         <div className="max-w-6xl mx-auto px-6 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="font-serif text-4xl text-civic-textPrimary mb-2">My Reports</h1>
-              <p className="text-civic-textSecondary">Track the issues you've raised</p>
+              <h1 className="font-serif text-4xl text-civic-textPrimary mb-2">{t('navigation.myReports')}</h1>
+              <p className="text-civic-textSecondary">{t('home.step2Desc')}</p>
             </div>
             <button
               onClick={() => navigate('/report')}
               className="bg-civic-orange text-white rounded-full px-6 py-3 font-medium flex items-center gap-2 hover:bg-civic-orange/90 transition-colors"
             >
               <PlusCircle className="w-5 h-5" />
-              Report New Issue
+              {t('issue.reportIssue')}
             </button>
           </div>
         </div>
@@ -328,7 +330,7 @@ const MyReports = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-civic-textSecondary" />
               <input
                 type="text"
-                placeholder="Search reports..."
+                placeholder={t('messages.searchReports')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-civic-parchment rounded-full border border-civic-muted focus:outline-none focus:ring-2 focus:ring-civic-orange/20"
@@ -347,7 +349,7 @@ const MyReports = () => {
                       : 'text-civic-textSecondary hover:text-civic-textPrimary'
                   }`}
                 >
-                  {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+                  {status === 'all' ? t('common.view') : status === 'under_review' ? t('status.under_review') : status === 'in_progress' ? t('status.inProgress') : t(`status.${status}`)}
                 </button>
               ))}
             </div>

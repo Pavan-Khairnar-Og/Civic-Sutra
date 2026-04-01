@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { 
   ArrowRight, MapPin, Camera, Cpu, TrendingUp, CheckCircle, 
