@@ -71,8 +71,17 @@ const ReportCard = ({
 
   // Handle status change
   const handleStatusChange = (newStatus) => {
+    console.log('=== REPORTCARD STATUS CHANGE ===')
+    console.log('Report ID:', report.id)
+    console.log('Current status:', report.status)
+    console.log('New status:', newStatus)
+    console.log('onStatusChange function exists:', !!onStatusChange)
+    console.log('==============================')
+    
     if (onStatusChange) {
       onStatusChange(report.id, newStatus)
+    } else {
+      console.error('❌ No onStatusChange handler provided')
     }
   }
 

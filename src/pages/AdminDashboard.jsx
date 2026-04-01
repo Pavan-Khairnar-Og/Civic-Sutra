@@ -82,11 +82,17 @@ const AdminDashboard = () => {
 
   /**
    * Update report status in Supabase
-   * Handles status changes with optimistic updates
+   * Handles status changes with optimistic updates and comprehensive error handling
    */
   const handleStatusUpdate = async (reportId, newStatus) => {
     try {
       setUpdatingStatus(reportId)
+      
+      console.log('=== STATUS UPDATE DEBUG ===')
+      console.log('Updating report ID:', reportId)
+      console.log('New status:', newStatus)
+      console.log('Current user:', JSON.stringify(localStorage.getItem('user')))
+      console.log('========================')
 
       // Optimistic update
       setReports(prev => 
@@ -97,14 +103,29 @@ const AdminDashboard = () => {
         )
       )
 
-      const { error } = await supabase
+      // Update in Supabase with timestamp
+      const { data, error } = await supabase
         .from('reports')
-        .update({ status: newStatus })
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', reportId)
+        .select() // Return the updated record to verify
+
+      console.log('Supabase update response:', { data, error })
 
       if (error) {
+        console.error('❌ Supabase update failed:', error)
         throw error
       }
+
+      if (!data || data.length === 0) {
+        console.error('❌ No data returned from update - report may not exist')
+        throw new Error('Report not found or update failed')
+      }
+
+      console.log('✅ Successfully updated report in database:', data[0])
 
       // Recalculate stats after successful update
       const updatedReports = reports.map(report => 
@@ -115,12 +136,21 @@ const AdminDashboard = () => {
       calculateStats(updatedReports)
 
       setError('')
+      console.log('✅ Status update completed successfully')
       
     } catch (error) {
-      console.error('Error updating status:', error)
-      setError('Failed to update status. Please try again.')
+      console.error('❌ Error updating status:', error)
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      })
       
-      // Revert optimistic update
+      setError(`Failed to update status: ${error.message}`)
+      
+      // Revert optimistic update by refetching data
+      console.log('🔄 Reverting optimistic update by refetching data')
       fetchReports()
     } finally {
       setUpdatingStatus(null)
