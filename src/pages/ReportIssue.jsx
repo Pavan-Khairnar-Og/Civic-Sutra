@@ -60,7 +60,6 @@ const ReportIssue = () => {
     images: [],
     category: '',
     severity: 'medium',
-    userSeverity: 'medium', // User-selected severity
     location: null,
     address: '',
     landmark: '',
@@ -318,6 +317,9 @@ const ReportIssue = () => {
 
     console.log("Setting aiClassification:", classification);
     setAiClassification(classification);
+    
+    // Update form severity with AI-determined severity
+    setFormData(prev => ({ ...prev, severity: finalSeverity }));
   };
 
   // File upload handlers
@@ -459,11 +461,8 @@ const ReportIssue = () => {
         }
       }
 
-      // Use higher of AI vs user severity
-      const severityRank = { low: 1, medium: 2, high: 3, critical: 4 };
-      const finalSeverity =
-        severityRank[formData.userSeverity] >= severityRank[formData.severity]
-          ? formData.userSeverity : formData.severity;
+      // Use AI-determined severity only
+      const finalSeverity = formData.severity;
 
       // Use user's selected category or AI category as fallback
       const finalCategory = formData.category || aiClassification?.category || 'Municipal Administration';
@@ -517,7 +516,6 @@ const ReportIssue = () => {
       images: [],
       category: '',
       severity: 'medium',
-      userSeverity: 'medium',
       location: null,
       address: '',
       landmark: '',
@@ -771,52 +769,7 @@ const ReportIssue = () => {
                       />
                     </div>
 
-                    {/* Severity Selector */}
-                    <div>
-                      <label className="block font-medium text-civic-textPrimary mb-3">
-                        How urgent is this issue? <span className="text-red-500">*</span>
-                      </label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {[
-                          { value: 'low', label: 'Low', desc: 'Minor, low impact', color: '#16a34a', bg: '#f0fdf4' },
-                          { value: 'medium', label: 'Medium', desc: 'Moderate issue', color: '#d97706', bg: '#fefce8' },
-                          { value: 'high', label: 'High', desc: 'Urgent, affects daily life', color: '#c2410c', bg: '#fff7ed' },
-                          { value: 'critical', label: 'Critical', desc: 'Safety emergency', color: '#dc2626', bg: '#fef2f2' },
-                        ].map((option) => (
-                          <label key={option.value} className="relative cursor-pointer">
-                            <input
-                              type="radio"
-                              name="userSeverity"
-                              value={option.value}
-                              checked={formData.userSeverity === option.value}
-                              onChange={(e) => setFormData(prev => ({ ...prev, userSeverity: e.target.value }))}
-                              className="sr-only"
-                            />
-                            <div className={`p-4 rounded-xl border-2 transition-all ${
-                              formData.userSeverity === option.value
-                                ? 'border-opacity-100 shadow-sm'
-                                : 'border-opacity-30 hover:border-opacity-50'
-                            }`}
-                                 style={{
-                                   borderColor: formData.userSeverity === option.value ? option.color : '#e5e7eb',
-                                   backgroundColor: formData.userSeverity === option.value ? option.bg : '#ffffff'
-                                 }}>
-                              <div className="flex items-center gap-2 mb-1">
-                                <div className={`w-3 h-3 rounded-full ${
-                                  formData.userSeverity === option.value ? 'ring-2 ring-offset-2' : ''
-                                }`}
-                                     style={{
-                                       backgroundColor: option.color,
-                                       ringColor: option.color
-                                     }}></div>
-                                <span className="font-medium text-civic-textPrimary">{option.label}</span>
-                              </div>
-                              <div className="text-xs text-civic-textSecondary">{option.desc}</div>
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+                    {/* AI Analysis will determine severity automatically */}
 
                     {/* Image Upload */}
                     <div>
@@ -1124,28 +1077,10 @@ const ReportIssue = () => {
 
                         <div>
                           <label className="block font-medium text-civic-textPrimary mb-2">
-                            Severity
+                            Severity (Auto-determined by AI)
                           </label>
-                          <div className="flex gap-3">
-                            {['low', 'medium', 'high', 'critical'].map((level) => (
-                              <label key={level} className="flex-1">
-                                <input
-                                  type="radio"
-                                  name="severity"
-                                  value={level}
-                                  checked={formData.severity === level}
-                                  onChange={(e) => setFormData(prev => ({ ...prev, severity: e.target.value }))}
-                                  className="sr-only"
-                                />
-                                <div className={`px-4 py-2 rounded-full text-center font-medium cursor-pointer transition-colors ${
-                                  formData.severity === level
-                                    ? getSeverityColor(level)
-                                    : 'bg-[#F8F6F1] text-civic-textSecondary hover:bg-civic-muted'
-                                }`}>
-                                  {level.charAt(0).toUpperCase() + level.slice(1)}
-                                </div>
-                              </label>
-                            ))}
+                          <div className={`px-3 py-1 rounded-full text-xs font-medium ${getSeverityColor(formData.severity)}`}>
+                            {formData.severity.toUpperCase()} - AI Determined
                           </div>
                         </div>
                       </div>

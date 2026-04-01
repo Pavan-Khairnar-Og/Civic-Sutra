@@ -552,7 +552,7 @@ const MapView = () => {
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategories, setSelectedCategories] = useState(categories.map(c => c.id))
+  const [selectedCategories, setSelectedCategories] = useState([]) // Start with no categories selected
   const [selectedSeverities, setSelectedSeverities] = useState([])
   const [selectedStatuses, setSelectedStatuses] = useState([])
   const [dateFrom, setDateFrom] = useState('')
@@ -564,40 +564,105 @@ const MapView = () => {
     const loadReports = async () => {
       try {
         setLoading(true)
+        console.log('=== MAP DATA LOADING DEBUG ===')
+        console.log('Current user:', user)
+        console.log('User metadata:', user?.user_metadata)
+        console.log('User ID:', user?.id)
         
-        let query = supabase.from('reports').select('*')
+        let query = supabase
+          .from('reports')
+          .select('*')
         
-        // Filter based on user role
+        // Filter based on user role and authentication
         if (!user) {
-          query = query.eq('is_anonymous', true)
-        } else if (user.role === 'gov' || user.role === 'admin') {
+          // Anonymous users see only anonymous reports
+          console.log('Anonymous user - filtering for anonymous reports only')
+          query = query.is('user_id', 'null')
+        } else if (user.user_metadata?.role === 'government' || user.user_metadata?.role === 'admin') {
           // Government users see all reports
+          console.log('Government user - loading all reports')
         } else {
-          if (user.email) {
-            query = query.eq('citizen_email', user.email)
-          } else {
-            query = query.eq('is_anonymous', true)
-          }
+          // Regular citizens see their own reports + anonymous reports
+          console.log('Citizen user - loading own + anonymous reports')
+          query = query.or(`user_id.eq.${user.id},user_id.is.null`)
         }
         
-        query = query.order('created_at', { ascending: false })
+        // Only get reports with valid coordinates
+        query = query.not('latitude', 'is', null)
+          .not('longitude', 'is', null)
+          .order('created_at', { ascending: false })
         
+        console.log('Final query built')
         const { data, error } = await query
         
         if (error) {
-          console.error('Failed to load reports:', error)
+          console.error('❌ Database error:', error)
+          toast.error('Failed to load reports from database')
           // Use sample data as fallback
           setReports(sampleReports)
         } else {
-          // Add sample data to real data for better visualization
-          const allReports = [...(data || []), ...sampleReports]
+          console.log('✅ Successfully loaded reports from DB:', data?.length || 0)
+          console.log('Raw data sample:', data?.[0])
+          
+          // Check for records with missing coordinates
+          const recordsWithCoords = (data || []).filter(report => 
+            report.latitude && report.longitude
+          )
+          const recordsWithoutCoords = (data || []).filter(report => 
+            !report.latitude || !report.longitude
+          )
+          
+          console.log('📍 Records with valid coordinates:', recordsWithCoords.length)
+          console.log('❌ Records without coordinates:', recordsWithoutCoords.length)
+          
+          if (recordsWithoutCoords.length > 0) {
+            console.log('Records missing coordinates:', recordsWithoutCoords.map(r => ({
+              id: r.id,
+              title: r.title,
+              latitude: r.latitude,
+              longitude: r.longitude
+            })))
+          }
+          
+          // Transform data to match expected format
+          const transformedReports = recordsWithCoords.map(report => {
+            const transformed = {
+              id: report.id,
+              title: report.title || 'Untitled Report',
+              description: report.description || '',
+              ai_issue_type: report.ai_issue_type || report.issue_type || 'Other',
+              ai_severity: report.ai_severity || 'medium',
+              status: report.status || 'pending',
+              address: report.address || 'Location not specified',
+              latitude: report.latitude,
+              longitude: report.longitude,
+              created_at: report.created_at,
+              citizen_email: report.citizen_email || 'anonymous@example.com',
+              is_anonymous: !report.user_id,
+              upvotes: report.upvotes || 0,
+              image_url: report.image_url,
+              ai_confidence: report.ai_confidence
+            }
+            console.log('Transformed report:', transformed)
+            return transformed
+          })
+          
+          // Add sample data if no real data exists for better visualization
+          const allReports = transformedReports.length > 0 
+            ? transformedReports 
+            : [...sampleReports]
+          
+          console.log('📊 Final reports for map:', allReports.length)
+          console.log('📍 Sample coordinates:', allReports.map(r => ({id: r.id, lat: r.latitude, lng: r.longitude})))
           setReports(allReports)
         }
       } catch (err) {
-        console.error('Failed to load reports:', err)
+        console.error('❌ Failed to load reports:', err)
+        toast.error('Error loading reports')
         setReports(sampleReports)
       } finally {
         setLoading(false)
+        console.log('=== END MAP DATA LOADING ===')
       }
     }
     
@@ -606,55 +671,90 @@ const MapView = () => {
 
   // Filter reports
   const filteredReports = useMemo(() => {
-    const filtered = reports.filter(report => {
+    console.log('=== FILTERING DEBUG ===')
+    console.log('Total reports before filtering:', reports.length)
+    console.log('Current filters:', {
+      searchQuery,
+      selectedCategories,
+      selectedSeverities,
+      selectedStatuses,
+      dateFrom,
+      dateTo
+    })
+
+    const filtered = reports.filter((report, index) => {
+      console.log(`\n--- Filtering Report ${index + 1}/${reports.length} ---`)
+      console.log('Report:', {
+        id: report.id,
+        title: report.title,
+        address: report.address,
+        ai_issue_type: report.ai_issue_type,
+        ai_severity: report.ai_severity,
+        status: report.status,
+        latitude: report.latitude,
+        longitude: report.longitude,
+        created_at: report.created_at
+      })
+
+      let passedAllFilters = true
+      const filterReasons = []
+
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
-        if (!report.title.toLowerCase().includes(query) && 
-            !report.address.toLowerCase().includes(query)) {
-          return false
+        const titleMatch = report.title.toLowerCase().includes(query)
+        const addressMatch = report.address.toLowerCase().includes(query)
+        if (!titleMatch && !addressMatch) {
+          passedAllFilters = false
+          filterReasons.push(`Search: "${query}" not found in title or address`)
         }
       }
       
       // Category filter - handle both old format ("Water Supply") and new format ("water_supply")
       if (selectedCategories.length > 0) {
         const reportCategoryKey = mapCategoryToTranslationKey(report.ai_issue_type);
-        if (!selectedCategories.includes(report.ai_issue_type) && !selectedCategories.includes(reportCategoryKey)) {
-          return false;
+        const categoryMatch = selectedCategories.includes(report.ai_issue_type) || selectedCategories.includes(reportCategoryKey)
+        if (!categoryMatch) {
+          passedAllFilters = false
+          filterReasons.push(`Category "${report.ai_issue_type}" not in selected: ${selectedCategories.join(', ')}`)
         }
       }
       
       // Severity filter
       if (selectedSeverities.length > 0 && !selectedSeverities.includes(report.ai_severity)) {
-        return false
+        passedAllFilters = false
+        filterReasons.push(`Severity "${report.ai_severity}" not in selected: ${selectedSeverities.join(', ')}`)
       }
       
       // Status filter
       if (selectedStatuses.length > 0 && !selectedStatuses.includes(report.status)) {
-        return false
+        passedAllFilters = false
+        filterReasons.push(`Status "${report.status}" not in selected: ${selectedStatuses.join(', ')}`)
       }
       
       // Date filter
       if (dateFrom && new Date(report.created_at) < new Date(dateFrom)) {
-        return false
+        passedAllFilters = false
+        filterReasons.push(`Created date ${report.created_at} before dateFrom ${dateFrom}`)
       }
       if (dateTo && new Date(report.created_at) > new Date(dateTo)) {
-        return false
+        passedAllFilters = false
+        filterReasons.push(`Created date ${report.created_at} after dateTo ${dateTo}`)
+      }
+
+      console.log('Filter result:', passedAllFilters ? '✅ PASSED' : '❌ REJECTED')
+      if (!passedAllFilters) {
+        console.log('Rejection reasons:', filterReasons)
       }
       
-      return true
+      return passedAllFilters
     })
     
-    console.log('Filtered reports:', { 
-      total: filtered.length, 
-      viewMode, 
-      sampleData: filtered.slice(0, 3).map(r => ({ 
-        id: r.id, 
-        lat: r.latitude, 
-        lng: r.longitude, 
-        severity: r.ai_severity 
-      }))
-    })
+    console.log('\n📊 FILTERING SUMMARY:')
+    console.log(`Total reports: ${reports.length}`)
+    console.log(`Filtered reports: ${filtered.length}`)
+    console.log(`Rejected reports: ${reports.length - filtered.length}`)
+    console.log('=== END FILTERING DEBUG ===\n')
     
     return filtered
   }, [reports, searchQuery, selectedCategories, selectedSeverities, selectedStatuses, dateFrom, dateTo, viewMode])
@@ -766,11 +866,28 @@ const MapView = () => {
 
   const resetFilters = () => {
     setSearchQuery('')
-    setSelectedCategories(categories.map(c => c.id))
+    setSelectedCategories([]) // Clear all categories to show all
     setSelectedSeverities([])
     setSelectedStatuses([])
     setDateFrom('')
     setDateTo('')
+  }
+
+  // Debug function to show all data
+  const debugShowAllData = () => {
+    console.log('=== DEBUG: SHOWING ALL DATA ===')
+    console.log('Total reports in state:', reports.length)
+    console.log('Filtered reports:', filteredReports.length)
+    console.log('All reports data:', reports)
+    console.log('Current filters:', {
+      searchQuery,
+      selectedCategories,
+      selectedSeverities,
+      selectedStatuses,
+      dateFrom,
+      dateTo
+    })
+    console.log('=== END DEBUG ===')
   }
 
   if (loading) {
