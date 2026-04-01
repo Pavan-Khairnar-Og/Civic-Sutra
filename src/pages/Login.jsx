@@ -126,67 +126,72 @@ const Login = () => {
         return;
       }
 
-      // For government login, verify additional fields
-      if (activeTab === 'government') {
-        // First check user metadata for government role
-        const userRole = data.user.user_metadata?.role;
-        const userDepartment = data.user.user_metadata?.department;
-        
-        console.log('Government login attempt:', {
-          userRole,
-          userDepartment,
-          emailConfirmed: data.user.email_confirmed_at,
-          user: data.user
-        });
-        
-        if (userRole !== 'government') {
-          await supabase.auth.signOut();
-          setAuthError('This account does not have government access. Please register as a government employee.');
-          return;
+      // Check government access with robust logic
+      const checkGovernmentAccess = async (user) => {
+        // Check 1: user metadata (most reliable, set at signup)
+        const meta = user.user_metadata || {};
+        if (meta.user_type === 'government') {
+          console.log("Gov access granted via metadata");
+          return { isGov: true, department: meta.department };
         }
 
-        // Skip email confirmation check for development
-        // Users can login immediately after registration
-
-        // Try to get profile data, but don't fail if RLS blocks it
-        let profile = null;
+        // Check 2: profiles table (fallback if metadata missing)
         try {
-          const { data: profileData } = await supabase
+          const { data: profile, error } = await supabase
             .from('profiles')
-            .select('role, department')
-            .eq('id', data.user.id)
+            .select('user_type, department')
+            .eq('id', user.id)
             .single();
-          profile = profileData;
-        } catch (profileErr) {
-          console.log('Profile access blocked by RLS, using user metadata instead');
+
+          if (!error && profile?.user_type === 'government') {
+            console.log("Gov access granted via profile");
+            return { isGov: true, department: profile.department };
+          }
+        } catch (e) {
+          console.warn("Profile lookup failed:", e.message);
         }
 
-        // Use profile data if available, otherwise use user metadata
-        const department = profile?.department || userDepartment;
+        console.log("No gov access found for user:", user.id);
+        return { isGov: false, department: null };
+      };
 
-        // Update user data with government info
-        const userData = {
-          name: data.user.user_metadata?.full_name || data.user.email.split('@')[0],
-          email: data.user.email,
-          role: 'gov',
-          department: department
-        };
-
-        console.log('Government login successful, userData:', userData);
-        login(userData);
-        navigate('/dashboard');
-      } else {
-        // Citizen login
-        const userData = {
-          name: data.user.email.split('@')[0],
-          email: data.user.email,
-          role: 'citizen'
-        };
-
-        login(userData);
-        navigate('/home');
+      const access = await checkGovernmentAccess(data.user);
+      if (activeTab === 'government' && !access.isGov) {
+        await supabase.auth.signOut();
+        setAuthError('This account does not have government access. Please register as a government employee.');
+        return;
       }
 
+      // Skip email confirmation check for development
+      // Users can login immediately after registration
+
+      // Try to get profile data, but don't fail if RLS blocks it
+      let profile = null;
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role, department')
+          .eq('id', data.user.id)
+          .single();
+        profile = profileData;
+      } catch (profileErr) {
+        console.log('Profile access blocked by RLS, using user metadata instead');
+      }
+
+      // Use profile data if available, otherwise use user metadata
+      const department = profile?.department || access.department;
+
+      // Update user data with government info
+      const userData = {
+        name: data.user.user_metadata?.full_name || data.user.email.split('@')[0],
+        email: data.user.email,
+        role: 'gov',
+        department: department
+      };
+
+      console.log('Government login successful, userData:', userData);
+      login(userData);
+      navigate('/dashboard');
     } catch (err) {
       console.error('Login error:', err);
       setAuthError('Something went wrong. Please try again.');
