@@ -254,7 +254,11 @@ const categories = [
   { id: 'sanitation_waste', name: 'Sanitation & Waste', icon: '🗑️', color: '#4A4E69' },
   { id: 'parks_gardens', name: 'Parks & Gardens', icon: '🌳', color: '#2A9D8F' },
   { id: 'public_safety', name: 'Public Safety', icon: '🚨', color: '#C1121F' },
-  { id: 'municipal_administration', name: 'Municipal Administration', icon: '🏢', color: '#6B6560' }
+  { id: 'municipal_administration', name: 'Municipal Administration', icon: '🏢', color: '#6B6560' },
+  // AI-generated categories that don't match our standard ones
+  { id: 'garbage', name: 'Sanitation & Waste', icon: '🗑️', color: '#4A4E69' },
+  { id: 'road_damage', name: 'Roads & Footpaths', icon: '🚧', color: '#6B4226' },
+  { id: 'water_leak OR flooding', name: 'Water Supply', icon: '💧', color: '#0077B6' }
 ]
 
 const severities = [
@@ -623,6 +627,18 @@ const MapView = () => {
               longitude: r.longitude
             })))
           }
+
+          // Debug AI department fields
+          console.log('🔍 DEBUGGING AI DEPARTMENT FIELDS:')
+          recordsWithCoords.forEach((report, index) => {
+            console.log(`Report ${index + 1}:`, {
+              id: report.id,
+              title: report.title,
+              ai_issue_type: report.ai_issue_type,
+              ai_department: report.ai_department,
+              assigned_department: report.assigned_department
+            })
+          })
           
           // Transform data to match expected format
           const transformedReports = recordsWithCoords.map(report => {
@@ -631,6 +647,8 @@ const MapView = () => {
               title: report.title || 'Untitled Report',
               description: report.description || '',
               ai_issue_type: report.ai_issue_type || report.issue_type || 'Other',
+              ai_department: report.ai_department,
+              assigned_department: report.assigned_department,
               ai_severity: report.ai_severity || 'medium',
               status: report.status || 'pending',
               address: report.address || 'Location not specified',
@@ -689,6 +707,8 @@ const MapView = () => {
         title: report.title,
         address: report.address,
         ai_issue_type: report.ai_issue_type,
+        ai_department: report.ai_department,
+        assigned_department: report.assigned_department,
         ai_severity: report.ai_severity,
         status: report.status,
         latitude: report.latitude,
@@ -710,13 +730,14 @@ const MapView = () => {
         }
       }
       
-      // Category filter - handle both old format ("Water Supply") and new format ("water_supply")
+      // Category filter - use AI department instead of issue type
       if (selectedCategories.length > 0) {
-        const reportCategoryKey = mapCategoryToTranslationKey(report.ai_issue_type);
-        const categoryMatch = selectedCategories.includes(report.ai_issue_type) || selectedCategories.includes(reportCategoryKey)
+        const aiDepartment = report.ai_department || report.assigned_department || report.ai_issue_type;
+        const reportCategoryKey = mapCategoryToTranslationKey(aiDepartment);
+        const categoryMatch = selectedCategories.includes(aiDepartment) || selectedCategories.includes(reportCategoryKey)
         if (!categoryMatch) {
           passedAllFilters = false
-          filterReasons.push(`Category "${report.ai_issue_type}" not in selected: ${selectedCategories.join(', ')}`)
+          filterReasons.push(`Category "${aiDepartment}" not in selected: ${selectedCategories.join(', ')}`)
         }
       }
       
@@ -778,10 +799,12 @@ const MapView = () => {
   const categoryCounts = useMemo(() => {
     return categories.map(category => ({
       ...category,
-      count: filteredReports.filter(r => 
-        r.ai_issue_type === category.id || 
-        mapCategoryToTranslationKey(r.ai_issue_type) === category.id
-      ).length
+      count: filteredReports.filter(r => {
+        const aiDepartment = r.ai_department || r.assigned_department || r.ai_issue_type;
+        return aiDepartment === category.id || 
+               aiDepartment === category.name ||
+               mapCategoryToTranslationKey(aiDepartment) === category.id
+      }).length
     }))
   }, [filteredReports])
 
@@ -926,9 +949,23 @@ const MapView = () => {
           {/* Markers */}
           {viewMode === 'pins' || viewMode === 'both' ? (
             filteredReports.map(report => {
+              // Use AI-assigned department instead of issue type
+              const aiDepartment = report.ai_department || report.assigned_department || report.ai_issue_type || 'Other';
+              console.log(`🗺️ MARKER DEBUG for Report ${report.id}:`, {
+                ai_department: report.ai_department,
+                assigned_department: report.assigned_department,
+                ai_issue_type: report.ai_issue_type,
+                final_department: aiDepartment
+              });
+              
               // Handle both old format ("Water Supply") and new format ("water_supply")
-              const categoryKey = mapCategoryToTranslationKey(report.ai_issue_type);
-              const categoryInfo = categories.find(c => c.id === report.ai_issue_type || c.id === categoryKey) || categories[0];
+              const categoryKey = mapCategoryToTranslationKey(aiDepartment);
+              const categoryInfo = categories.find(c => c.id === aiDepartment || c.id === categoryKey || c.name === aiDepartment) || categories[0];
+              console.log(`📋 CATEGORY INFO for ${aiDepartment}:`, {
+                categoryKey,
+                foundCategory: categoryInfo,
+                categoryName: categoryInfo.name
+              });
               const deptIcon = categoryInfo.icon;
               const deptColor = categoryInfo.color;
               const deptColorLight = `${categoryInfo.color}20`;
@@ -951,7 +988,7 @@ const MapView = () => {
                 <Marker
                   key={report.id}
                   position={[report.latitude, report.longitude]}
-                  icon={createCustomMarker(report.ai_issue_type, report.ai_severity)}
+                  icon={createCustomMarker(aiDepartment, report.ai_severity)}
                   eventHandlers={{
                     click: () => {
                       setSelectedReport(report)
