@@ -200,6 +200,85 @@ const Login = () => {
     }
   };
 
+  // Enhanced government signup with profile creation
+  const handleGovernmentSignup = async (e) => {
+    setLoading(true);
+    setRegError(null);
+
+    const formData = new FormData(e.target);
+    const email = formData.get('email');
+    const password = formData.get('password');
+    const fullName = formData.get('fullName');
+    const phone = formData.get('phone');
+    const department = formData.get('department');
+
+    if (!email || !password || !fullName || !department) {
+      setRegError('Please fill in all required fields');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Step 1: Sign up with full metadata
+      // Even if profile insert fails, metadata has everything
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            user_type: 'government',
+            department: selectedDepartment,
+            full_name: fullName || email,
+            phone
+          }
+        }
+      });
+
+      if (signUpError) {
+        setRegError(signUpError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!data?.user) {
+        setRegError("Signup failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Try profile insert with delay
+      // Delay gives Supabase time to activate the session
+      setTimeout(async () => {
+        try {
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            email,
+            user_type: 'government',
+            department: selectedDepartment,
+            phone,
+            created_at: new Date().toISOString()
+          }, { onConflict: 'id' });
+          console.log("Profile created successfully");
+        } catch (e) {
+          console.warn("Profile insert failed but metadata is set:", e.message);
+          // Non-blocking — login will use metadata fallback
+        }
+      }, 2000); // 2 second delay
+
+      // Step 3: Show success — don't wait for profile insert
+      setRegSuccess(true);
+      setTimeout(() => {
+        setRegSuccess(false);
+        setAuthSuccess('Government account created! Please sign in.');
+        setIsSignUp(false);
+        setLoading(false);
+      }, 1000);
+    } catch (err) {
+      setRegError(err.message || 'Failed to create government account. Please try again.');
+      setLoading(false);
+    }
+  };
+
   // Handle government user registration
   const handleGovRegistration = async (e) => {
     e.preventDefault();
