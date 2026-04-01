@@ -68,19 +68,18 @@ const MyReports = () => {
         
         // Filter based on user role
         if (!user) {
-          // No user - show only anonymous reports
-          query = query.eq('is_anonymous', true)
+          // No user - just fetch reports with no user_id attached
+          query = query.is('user_id', null)
         } else if (user.role === 'gov' || user.role === 'admin') {
           // Government users see all reports
           // No additional filter needed
         } else {
           // Regular citizens see only their own reports
-          // Use citizen_email field since user_id is UUID and we don't have it
           if (user.email) {
             query = query.eq('citizen_email', user.email)
           } else {
-            // Fallback to anonymous reports if no email
-            query = query.eq('is_anonymous', true)
+            // Fallback for anonymous user sessions
+            query = query.is('user_id', null)
           }
         }
         

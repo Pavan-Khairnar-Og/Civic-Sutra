@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { supabase } from '../services/supabase'
 
 /**
  * CivicSutra Authentication Context
- * Simplified auth with localStorage persistence and role management
+ * Integrates with Supabase Auth for proper authentication
  */
 
 const AuthContext = createContext()
@@ -19,31 +20,35 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Check localStorage on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('civicsutra_user')
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser)
-        setUser(userData)
-      } catch (error) {
-        console.error('Error parsing user data:', error)
-        localStorage.removeItem('civicsutra_user')
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null)
+        setLoading(false)
       }
-    }
-    setLoading(false)
+    )
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const login = (userData) => {
+    // Store additional user data in localStorage for role-based UI
     const userWithRole = {
       ...userData,
       role: userData.role || 'citizen'
     }
-    setUser(userWithRole)
     localStorage.setItem('civicsutra_user', JSON.stringify(userWithRole))
   }
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut()
     setUser(null)
     localStorage.removeItem('civicsutra_user')
     window.location.href = '/login'

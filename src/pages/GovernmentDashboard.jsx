@@ -78,7 +78,7 @@ const GovernmentDashboard = () => {
       const { data: reportsData, error: reportsError } = await supabase
         .from('reports')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('priority_score', { ascending: false })
 
       if (reportsError) throw reportsError
 
@@ -425,6 +425,19 @@ const GovernmentDashboard = () => {
 /**
  * Helper Components
  */
+const normalizeCategory = (cat) => {
+  if (!cat) return 'General';
+  const c = cat.toLowerCase();
+  if (c.includes('road') || c.includes('footpath')) return 'Roads & Footpaths';
+  if (c.includes('water')) return 'Water Supply';
+  if (c.includes('light') || c.includes('street')) return 'Street Lighting';
+  if (c.includes('sanit') || c.includes('waste')) return 'Sanitation & Waste';
+  if (c.includes('park') || c.includes('garden')) return 'Parks & Gardens';
+  if (c.includes('safety')) return 'Public Safety';
+  if (c.includes('municipal') || c.includes('admin')) return 'Municipal Administration';
+  return cat; // return original if no match
+};
+
 const MetricCard = ({ title, value, icon, trend, color = "text-gray-900" }) => (
   <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
     <div className="flex items-center justify-between mb-4">
@@ -437,21 +450,19 @@ const MetricCard = ({ title, value, icon, trend, color = "text-gray-900" }) => (
 );
 
 const IssueRow = ({ report, onStatusUpdate }) => {
-  // Fix 1: Capped priority score calculation
-  const calculatePriority = (issue) => {
-    const severityScore = {
-      'critical': 40,
-      'high':     30,
-      'medium':   20,
-      'low':      10,
-    }[issue.ai_severity?.toLowerCase()] ?? 15;
+  // Use DB priority_score directly, exactly 0-100, no frontend re-calculation
+  const score = Math.min(Math.round(report.priority_score || 0), 100);
 
-    const likeScore    = Math.min((issue.upvotes || 0) * 0.3, 30);
-    const similarScore = Math.min((issue.confirmations || 0) * 2, 20);
-    const aiScore      = Math.min((issue.ai_confidence || 0) * 0.1, 10);
+  const pillClass =
+    score >= 75 ? 'bg-[#fef2f2] text-[#dc2626]' :
+    score >= 55 ? 'bg-[#fff7ed] text-[#c2410c]' :
+    score >= 30 ? 'bg-[#fefce8] text-[#a16207]' :
+                 'bg-[#f0fdf4] text-[#16a34a]';
 
-    return Math.min(Math.round(severityScore + likeScore + similarScore + aiScore), 100);
-  };
+  const label =
+    score >= 75 ? 'Critical' :
+    score >= 55 ? 'High' :
+    score >= 30 ? 'Medium' : 'Low';
 
   // Fix 3: Reporter name logic
   const getReporterName = (issue) => {
@@ -461,35 +472,46 @@ const IssueRow = ({ report, onStatusUpdate }) => {
     return 'Citizen';
   };
 
-  const priorityScore = calculatePriority(report);
-  
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors group">
       <td className="px-6 py-4">
         <div className="flex items-center gap-2">
-          <span className={`text-sm font-bold ${priorityScore > 75 ? 'text-red-500' : 'text-gray-600'}`}>
-            {priorityScore}
+          <span className={`inline-flex items-center justify-center
+                        px-2 py-0.5 rounded-md text-xs font-bold
+                        ${pillClass}`}>
+            {score}
           </span>
-          <TrendingUp size={12} className={priorityScore > 75 ? 'text-red-500' : 'text-gray-400'} />
+          <div className="w-16 h-1.5 rounded-full overflow-hidden
+                        bg-stone-100 dark:bg-[#3a4a42]">
+            <div style={{
+              width: `${score}%`,
+              background: pillClass.includes('dc2626') ? '#dc2626' :
+                          pillClass.includes('c2410c') ? '#c2410c' :
+                          pillClass.includes('a16207') ? '#d97706' : '#16a34a',
+              height: '100%',
+            }} />
+          </div>
         </div>
       </td>
       <td className="px-6 py-4">
         <div className="max-w-[240px]">
           {/* Fix 2: Real title prominently displayed */}
-          <div className="text-sm font-bold truncate group-hover:text-blue-500 transition-colors cursor-pointer" onClick={() => window.location.href=`/admin/issue/${report.id}`}>
+          <div className="font-medium text-stone-900 dark:text-[#e8e0d5] text-sm truncate max-w-[200px]">
             {report.title || 'Untitled Issue'}
           </div>
-          <div className="text-[11px] text-gray-400 font-mono uppercase truncate opacity-60">ID: {report.id?.substring(0, 8)}</div>
+          <div className="text-xs text-stone-400 dark:text-[#6e5f50] mt-0.5">
+            {report.location || `ID: ${report.id?.slice(0,8).toUpperCase()}`}
+          </div>
         </div>
       </td>
       <td className="px-6 py-4">
         <span className="text-[11px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-md">
-          {report.ai_issue_type || 'General'}
+          {normalizeCategory(report.ai_issue_type || report.issue_type)}
         </span>
       </td>
-      <td className="px-6 py-4 text-xs text-gray-500 font-medium">
+      <td className="px-6 py-4 text-xs text-stone-500 dark:text-[#a89880] font-medium">
         {/* Fix 3 rendering */}
-        <div style={{color: '#6b7c72', fontSize: 13}}>
+        <div>
           {getReporterName(report)}
         </div>
       </td>

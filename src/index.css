@@ -253,3 +253,16 @@ html.dark .shadow-sm,
 html.dark .shadow-md {
   box-shadow: 0 1px 8px rgba(0,0,0,0.4) !important;
 }
+
+/* Ensure all text is visible in light mode */
+html:not(.dark) .text-white {
+  color: #1c1917 !important;
+}
+html:not(.dark) input,
+html:not(.dark) textarea {
+  color: #1c1917 !important;
+}
+html:not(.dark) [class*="text-gray-1"],
+html:not(.dark) [class*="text-gray-2"] {
+  color: #57534e !important;
+}

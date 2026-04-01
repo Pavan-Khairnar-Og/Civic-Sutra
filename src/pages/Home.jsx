@@ -70,7 +70,8 @@ const Home = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-civic-parchment dark:bg-[#1e1a17]">
+    <>
+      <div className="min-h-screen bg-civic-parchment dark:bg-[#1e1a17]">
       {/* HERO SECTION */}
       <ErrorBoundary>
         <HeroSection />
@@ -252,7 +253,7 @@ const Home = () => {
             </div>
           </div>
           <div className="border-t border-stone-100 dark:border-[#3d3630] pt-8 mt-12 flex flex-col md:flex-row justify-between items-center gap-4">
-            <span className="text-stone-500 dark:text-stone-400 text-[xs font-medium]">
+            <span className="text-stone-500 dark:text-stone-400 text-xs font-medium">
               © 2024 CivicSutra. All rights reserved.
             </span>
             <span className="text-stone-500 dark:text-stone-400 text-xs font-medium">
@@ -261,21 +262,9 @@ const Home = () => {
           </div>
         </div>
       </footer>
-
-      <style jsx>{`
-        @keyframes ticker {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .animate-ticker {
-          animation: ticker 30s linear infinite;
-        }
-        .animate-ticker:hover {
-          animation-play-state: paused;
-        }
-      `}</style>
     </div>
-  )
-}
+    </>
+  );
+};
 
-export default Home
+export default Home;

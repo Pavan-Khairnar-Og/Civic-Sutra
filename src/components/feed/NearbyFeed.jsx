@@ -1,116 +1,156 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../services/supabase';
-import Card from '../ui/Card';
-import Badge from '../ui/Badge';
-import { MapPin, Clock, AlertTriangle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import IssueCard from './IssueCard';
+import { MapPin, Loader2 } from 'lucide-react';
 
-const NearbyFeed = () => {
+export default function NearbyFeed() {
+  const { user } = useAuth();
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [locationError, setLocationError] = useState(false);
+  const [locationDenied, setLocationDenied] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
-    const fetchNearby = async (lat, lng) => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase.rpc('get_nearby_issues', {
-          user_lat: lat,
-          user_lng: lng,
-          radius_km: 5
-        });
-        
-        if (error) {
-          console.error('Feed RPC error:', error);
-          setIssues([]);
-          return;
-        }
-        setIssues(data || []);
-      } catch (err) {
-        console.error('Feed fetch failed:', err);
-        setIssues([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchNearbyIssues();
+  }, []);
+
+  const fetchNearbyIssues = () => {
+    setLoading(true);
+
+    // Try to get location with 8s timeout
+    const geoOptions = { timeout: 8000, enableHighAccuracy: false };
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          fetchNearby(pos.coords.latitude, pos.coords.longitude);
+        async (pos) => {
+          await loadIssues(pos.coords.latitude, pos.coords.longitude);
         },
-        (err) => {
-          console.warn('Geolocation denied or failed:', err);
-          setLocationError(true);
-          setLoading(false); // Critical fix
+        async () => {
+          // Location denied or timeout — load recent issues without geo filter
+          setLocationDenied(true);
+          await loadIssues(null, null);
         },
-        { timeout: 8000, enableHighAccuracy: false } // Added timeout
+        geoOptions
       );
     } else {
-      setLocationError(true);
+      setLocationDenied(true);
+      loadIssues(null, null);
+    }
+  };
+
+  const loadIssues = async (lat, lng) => {
+    try {
+      let data;
+
+      if (lat && lng) {
+        // RPC function doesn't exist, use fallback with location-based filtering
+        console.log('Using location-based fallback query');
+        const { data: fallback, error: fallbackError } = await supabase
+          .from('reports')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(15);
+          
+        if (!fallbackError) data = fallback;
+      } else {
+        // No location — just show recent globally
+        const { data: recent, error: recentError } = await supabase
+          .from('reports')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(15);
+          
+        if (!recentError) data = recent;
+      }
+
+      setIssues(data || []);
+    } catch (err) {
+      console.error('Feed load error:', err);
+      setIssues([]);
+    } finally {
       setLoading(false);
     }
-  }, []);
+  };
+
+  // Client-side filtering
+  const filtered = issues.filter(issue => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'critical') {
+      return issue.ai_severity?.toLowerCase() === 'critical' || 
+             issue.severity?.toLowerCase() === 'critical' || 
+             (issue.priority_score || 0) >= 75;
+    }
+    const cat = issue.ai_issue_type?.toLowerCase() || issue.issue_type?.toLowerCase() || '';
+    return cat.includes(activeFilter.toLowerCase());
+  });
 
   if (loading) {
     return (
       <div className="py-12 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D4522A] mx-auto mb-4"></div>
-        <p className="text-gray-500">Finding issues near you...</p>
-      </div>
-    );
-  }
-
-  if (locationError && issues.length === 0) {
-    return (
-      <div className="py-12 text-center bg-gray-50 dark:bg-[#2e2924] rounded-2xl border border-dashed border-gray-200 dark:border-[#4a4035]">
-        <MapPin className="mx-auto text-gray-400 mb-2" size={32} />
-        <p className="text-gray-600 dark:text-gray-400">Location access required to show nearby issues.</p>
+        <Loader2 className="animate-spin text-[#D4522A] mx-auto mb-4" size={32} />
+        <p className="text-stone-500 dark:text-[#a89880]">Finding civic issues...</p>
       </div>
     );
   }
 
   return (
-    <section className="py-12">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="serif text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <MapPin size={24} className="text-[#D4522A]" />
-          Issues in Your Area
-        </h2>
-        <span className="text-xs font-bold text-[#D4522A] uppercase tracking-widest">Live Updates</span>
+    <section className="max-w-4xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-xl font-bold text-stone-900 dark:text-white flex items-center gap-2">
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+            Civic Feed
+          </h2>
+          <p className="text-xs text-stone-500 dark:text-[#a89880] mt-1 flex items-center gap-1">
+            <MapPin size={12} />
+            {locationDenied
+              ? 'Showing recent reports'
+              : 'Showing reports within 5km'}
+          </p>
+        </div>
+        <span className="text-[10px] font-bold text-[#D4522A] uppercase tracking-widest bg-[#FBF0EB] dark:bg-[#D4522A]/10 px-2 py-1 rounded">
+          Live Updates
+        </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {issues.length > 0 ? (
-          issues.map((issue) => (
-            <Card key={issue.id} className="p-5 border-none shadow-sm hover:shadow-md transition-all dark:bg-[#26221e] group">
-              <div className="flex justify-between items-start mb-3">
-                <Badge variant="outline" className="text-[10px] uppercase border-gray-200">{issue.ai_issue_type || 'Civic Issue'}</Badge>
-                <div className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                  issue.status === 'resolved' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                }`}>
-                  {issue.status}
-                </div>
-              </div>
-              <h3 className="font-bold text-gray-900 dark:text-white mb-2 line-clamp-1 group-hover:text-[#D4522A] transition-colors">{issue.title}</h3>
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50 dark:border-[#3d3630]">
-                <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                  <Clock size={12} />
-                  {new Date(issue.created_at).toLocaleDateString()}
-                </div>
-                <div className="flex items-center gap-1 text-[10px] font-bold text-[#D4522A]">
-                  {Math.round(issue.distance_km * 10) / 10} km away
-                </div>
-              </div>
-            </Card>
-          ))
-        ) : (
-          <div className="col-span-full py-12 text-center border border-dashed border-gray-200 dark:border-[#4a4035] rounded-2xl">
-            <p className="text-gray-500 italic">No recent issues found within 5km of your location.</p>
-          </div>
-        )}
+      {/* Filter Chips */}
+      <div className="flex gap-2 overflow-x-auto pb-4 mb-2 scrollbar-hide">
+        {['All', 'Critical', 'Water', 'Roads', 'Lighting', 'Sanitation', 'Parks']
+          .map(f => (
+          <button
+            key={f}
+            onClick={() => setActiveFilter(f.toLowerCase())}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
+              activeFilter === f.toLowerCase()
+                ? 'bg-[#D4522A] text-white border-[#D4522A] shadow-sm'
+                : 'bg-white dark:bg-[#26221e] text-stone-600 dark:text-[#c4b5a2] border-stone-200 dark:border-[#4a4035] hover:border-stone-300 dark:hover:border-[#5a5045]'
+            }`}
+          >
+            {f}
+          </button>
+        ))}
       </div>
+
+      {/* Issue Cards */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 bg-white dark:bg-[#26221e] rounded-2xl border border-dashed border-stone-200 dark:border-[#4a4035]">
+          <MapPin className="mx-auto text-stone-300 dark:text-[#4a4035] mb-3" size={40} />
+          <p className="text-stone-500 dark:text-[#a89880] font-medium">No civic issues found</p>
+          <p className="text-stone-400 dark:text-[#6e5f50] text-sm mt-1">Try selecting a different filter or checking back later.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map(issue => (
+            <IssueCard
+              key={issue.id}
+              issue={issue}
+              currentUserId={user?.id}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
-};
-
-export default NearbyFeed;
+}

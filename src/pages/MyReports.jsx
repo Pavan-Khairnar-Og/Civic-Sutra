@@ -81,20 +81,20 @@ const MyReports = () => {
 
   const getSeverityColor = (severity) => {
     const colors = {
-      critical: 'bg-[#FCEAEA] text-[#C1121F]',
-      high: 'bg-[#FBF0EB] text-[#D4522A]',
-      medium: 'bg-[#FEF6E7] text-[#E9A84C]',
-      low: 'bg-[#E8F6F4] text-[#2A9D8F]'
+      critical: 'bg-[#FEE2E2] text-stone-900 dark:text-[#C1121F]',
+      high: 'bg-[#FEF3C7] text-stone-900 dark:text-[#D4522A]',
+      medium: 'bg-[#FEF9C3] text-stone-900 dark:text-[#E9A84C]',
+      low: 'bg-[#F0FDF4] text-stone-900 dark:text-[#2A9D8F]'
     }
     return colors[severity] || colors.medium
   }
 
   const getStatusColor = (status) => {
     const colors = {
-      'pending': 'bg-[#FEF6E7] text-[#E9A84C]',
-      'under_review': 'bg-[#E8F6F4] text-[#2A9D8F]',
-      'in_progress': 'bg-[#FBF0EB] text-[#D4522A]',
-      'resolved': 'bg-[#E8F6F4] text-[#2A9D8F]'
+      'pending': 'bg-[#FEF6E7] text-stone-900 dark:text-[#E9A84C]',
+      'under_review': 'bg-[#E8F6F4] text-stone-900 dark:text-[#2A9D8F]',
+      'in_progress': 'bg-[#FEF3C7] text-stone-900 dark:text-[#D4522A]',
+      'resolved': 'bg-[#E8F6F4] text-stone-900 dark:text-[#2A9D8F]'
     }
     return colors[status] || colors['pending']
   }
@@ -139,10 +139,10 @@ const MyReports = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="serif text-4xl font-bold text-[#1C1917] mb-2">
+            <h1 className="serif text-4xl font-bold text-stone-900 dark:text-[#e8e0d5] mb-2">
               My Reports
             </h1>
-            <p className="text-[#6B6560]">
+            <p className="text-stone-600 dark:text-[#a89880]">
               Track the status of your reported issues
             </p>
           </div>
@@ -157,46 +157,46 @@ const MyReports = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl p-6 border border-[#E8E4DC]">
-            <div className="text-[#6B6560] text-sm mb-1">Total Reports</div>
-            <div className="text-[#1C1917] font-bold text-2xl">{totalReports}</div>
+          <div className="bg-white rounded-2xl p-6 border border-stone-200 dark:border-[#4a4035]">
+            <div className="text-stone-600 dark:text-[#a89880] text-sm mb-1">Total Reports</div>
+            <div className="text-stone-900 dark:text-[#e8e0d5] font-bold text-2xl">{totalReports}</div>
           </div>
-          <div className="bg-white rounded-2xl p-6 border border-[#E8E4DC]">
-            <div className="text-[#6B6560] text-sm mb-1">Pending</div>
-            <div className="text-[#E9A84C] font-bold text-2xl">{pendingCount}</div>
+          <div className="bg-white rounded-2xl p-6 border border-stone-200 dark:border-[#4a4035]">
+            <div className="text-stone-600 dark:text-[#a89880] text-sm mb-1">Pending</div>
+            <div className="text-orange-600 dark:text-[#e8692a] font-bold text-2xl">{pendingCount}</div>
           </div>
-          <div className="bg-white rounded-2xl p-6 border border-[#E8E4DC]">
-            <div className="text-[#6B6560] text-sm mb-1">In Progress</div>
-            <div className="text-[#D4522A] font-bold text-2xl">{inProgressCount}</div>
+          <div className="bg-white rounded-2xl p-6 border border-stone-200 dark:border-[#4a4035]">
+            <div className="text-stone-600 dark:text-[#a89880] text-sm mb-1">In Progress</div>
+            <div className="text-orange-600 dark:text-[#e8692a] font-bold text-2xl">{inProgressCount}</div>
           </div>
-          <div className="bg-white rounded-2xl p-6 border border-[#E8E4DC]">
-            <div className="text-[#6B6560] text-sm mb-1">Resolved</div>
-            <div className="text-[#2A9D8F] font-bold text-2xl">{resolvedCount}</div>
+          <div className="bg-white rounded-2xl p-6 border border-stone-200 dark:border-[#4a4035]">
+            <div className="text-stone-600 dark:text-[#a89880] text-sm mb-1">Resolved</div>
+            <div className="text-green-600 dark:text-[#4ade80] font-bold text-2xl">{resolvedCount}</div>
           </div>
         </div>
 
         {/* Filters */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-[#1C1917] font-semibold text-lg">Filter Reports</h2>
+          <h2 className="text-stone-900 dark:text-[#e8e0d5] font-semibold text-lg">Filter Reports</h2>
           <div className="relative">
             <button
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className="flex items-center gap-2 bg-[#F8F6F1] border border-[#E8E4DC] rounded-xl px-4 py-2.5 text-[#1C1917] hover:border-[#D4522A] transition-colors"
+              className="flex items-center gap-2 bg-stone-50 dark:bg-[#4a4035] border border-stone-200 dark:border-[#4a4035] rounded-xl px-4 py-2.5 text-stone-900 dark:text-[#e8e0d5] hover:border-orange-400 transition-colors"
             >
               <Filter className="w-4 h-4" />
-              Filters
+              <span className="text-stone-900 dark:text-[#e8e0d5]">Filters</span>
               <ChevronDown className={`w-4 h-4 transition-transform ${showFilterDropdown ? 'rotate-180' : ''}`} />
             </button>
             
             {showFilterDropdown && (
-              <div className="absolute right-0 mt-2 w-64 bg-white border border-[#E8E4DC] rounded-xl shadow-lg z-10">
+              <div className="absolute right-0 mt-2 w-64 bg-white border border-stone-200 dark:border-[#4a4035] rounded-xl shadow-lg z-10">
                 <div className="p-4">
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-[#1C1917] mb-2">Status</label>
+                    <label className="block text-sm font-medium text-stone-900 dark:text-[#e8e0d5] mb-2">Status</label>
                     <select
                       value={filter.status}
                       onChange={(e) => setFilter(prev => ({ ...prev, status: e.target.value }))}
-                      className="w-full bg-[#F8F6F1] border border-[#E8E4DC] rounded-xl px-4 py-2.5 text-[#1C1917] focus:border-[#D4522A] outline-none"
+                      className="w-full bg-stone-50 dark:bg-[#4a4035] border border-stone-200 dark:border-[#4a4035] rounded-xl px-4 py-2.5 text-stone-900 dark:text-[#e8e0d5] focus:border-orange-400 outline-none"
                     >
                       <option value="all">All Status</option>
                       <option value="Pending">Pending</option>
@@ -206,11 +206,11 @@ const MyReports = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-[#1C1917] mb-2">Category</label>
+                    <label className="block text-sm font-medium text-stone-900 dark:text-[#e8e0d5] mb-2">Category</label>
                     <select
                       value={filter.category}
                       onChange={(e) => setFilter(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full bg-[#F8F6F1] border border-[#E8E4DC] rounded-xl px-4 py-2.5 text-[#1C1917] focus:border-[#D4522A] outline-none"
+                      className="w-full bg-stone-50 dark:bg-[#4a4035] border border-stone-200 dark:border-[#4a4035] rounded-xl px-4 py-2.5 text-stone-900 dark:text-[#e8e0d5] focus:border-orange-400 outline-none"
                     >
                       <option value="all">All Categories</option>
                       <option value="Water Supply">Water Supply</option>
@@ -233,10 +233,10 @@ const MyReports = () => {
           // Empty state
           <div className="text-center py-20">
             <FileX className="w-16 h-16 text-[#C8C4BC] mx-auto mb-4" />
-            <h3 className="text-[#1C1917] font-semibold text-xl mb-2">
+            <h3 className="text-stone-900 dark:text-[#e8e0d5] font-semibold text-xl mb-2">
               {reports.length === 0 ? 'No reports yet' : 'No reports found'}
             </h3>
-            <p className="text-[#6B6560] text-sm mb-6">
+            <p className="text-stone-600 dark:text-[#a89880] text-sm mb-6">
               {reports.length === 0 
                 ? 'Issues you report will appear here' 
                 : 'Try adjusting your filters to see more reports'
@@ -263,11 +263,11 @@ const MyReports = () => {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-[#1C1917] text-lg mb-2">
+                    <h3 className="font-semibold text-stone-900 dark:text-[#e8e0d5] text-lg mb-2">
                       {report.title}
                     </h3>
                     <div className="flex items-center gap-3 mb-4">
-                      <span className="bg-[#FBF0EB] text-[#D4522A] rounded-full px-3 py-1 text-xs font-medium">
+                      <span className="bg-stone-100 dark:bg-[#4a4035] text-orange-600 dark:text-[#e8692a] rounded-full px-3 py-1 text-xs font-medium">
                         {report.ai_issue_type || 'General'}
                       </span>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${getSeverityColor(report.ai_severity)}`}>
@@ -280,10 +280,20 @@ const MyReports = () => {
                         {report.status?.replace('_', ' ').toUpperCase() || 'PENDING'}
                       </span>
                     </div>
-                    <p className="text-[#6B6560] text-sm mb-3 line-clamp-2">
+                    {report.ai_description && (
+                      <div className="mb-3 bg-stone-50 dark:bg-[#4a4035]/50 border border-stone-100 dark:border-[#4a4035] rounded-lg p-3">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-700 dark:text-[#c8bba6] mb-1">
+                          <span className="text-[#2A9D8F]">🔍</span> AI Analysis Summary
+                        </div>
+                        <p className="text-stone-600 dark:text-[#a89880] text-sm italic">
+                          "{report.ai_description}"
+                        </p>
+                      </div>
+                    )}
+                    <p className="text-stone-600 dark:text-[#a89880] text-sm mb-3 line-clamp-2">
                       {report.description}
                     </p>
-                    <div className="flex items-center gap-4 text-xs text-[#6B6560]">
+                    <div className="flex items-center gap-4 text-stone-600 dark:text-[#a89880] text-xs">
                       <div className="flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
                         <span>{report.address || 'Location not set'}</span>

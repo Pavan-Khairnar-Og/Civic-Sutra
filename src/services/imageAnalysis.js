@@ -16,20 +16,25 @@
 // Get API key from environment variables (browser compatible)
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
-const CIVIC_ISSUE_PROMPT = `
-You are a civic issue detection AI. Analyze this image and respond ONLY in this JSON format:
+const CIVIC_ISSUE_PROMPT = `You are a civic issue detection AI 
+for Indian cities. Analyze the image and return ONLY a valid 
+JSON object. No markdown, no code fences, no explanation.
+
 {
-  "issueType": "pothole | garbage | streetlight | water_leak | road_damage | graffiti | fallen_tree | sewage | other",
-  "confidence": 0.0-1.0,
-  "severity": "low | medium | high | critical",
-  "description": "Brief description of the issue",
-  "suggestedDepartment": "Roads | Sanitation | Electricity | Water | Parks | Other",
-  "isValidCivicIssue": true/false,
-  "reasoning": "Why you classified it this way"
+  "issueType": "pothole OR garbage OR streetlight OR water_leak OR road_damage OR graffiti OR fallen_tree OR sewage OR traffic OR other",
+  "confidence": <number between 0.0 and 1.0>,
+  "severity": "low OR medium OR high OR critical",
+  "suggestedDepartment": "Roads OR Sanitation OR Electricity OR Water OR Parks OR Municipal Administration OR Traffic OR Other",
+  "isValidCivicIssue": <true or false>,
+  "reasoning": "<one sentence: why you classified it>",
+  "detectedObjects": ["<object1 you actually see>", "<object2>", "<object3>"],
+  "ai_description": "<2-3 sentences about what you ACTUALLY see in THIS image: describe the visible problem, its scale, and risk to citizens. Never use placeholder text.>"
 }
-If no civic issue is detected, set isValidCivicIssue to false.
-IMPORTANT: Respond with ONLY the JSON object, no additional text or markdown.
-`;
+
+Critical rules:
+- detectedObjects must list real things visible in the image
+- ai_description must be unique to this specific image
+- Return ONLY the JSON object, nothing else`;
 
 /**
  * Analyze an image for civic issues using Groq AI
@@ -123,6 +128,8 @@ export async function analyzeIssueImage(base64ImageData, mimeType = "image/jpeg"
         throw new Error('Could not parse JSON response from Groq API');
       }
     }
+
+    console.log("Parsed ai_description:", analysisResult.ai_description);
     
     // Validate required fields
     const validatedResult = {
@@ -131,7 +138,9 @@ export async function analyzeIssueImage(base64ImageData, mimeType = "image/jpeg"
       severity: ['low', 'medium', 'high', 'critical'].includes(analysisResult.severity) 
         ? analysisResult.severity 
         : 'low',
-      description: analysisResult.description || 'No description provided',
+      description: analysisResult.ai_description || analysisResult.description || null,
+      ai_description: analysisResult.ai_description ?? null,
+      detectedObjects: analysisResult.detectedObjects || [],
       suggestedDepartment: ['Roads', 'Sanitation', 'Electricity', 'Water', 'Parks', 'Other']
         .includes(analysisResult.suggestedDepartment) 
         ? analysisResult.suggestedDepartment 
@@ -153,6 +162,8 @@ export async function analyzeIssueImage(base64ImageData, mimeType = "image/jpeg"
       confidence: 0,
       severity: "low",
       description: "Analysis failed",
+      ai_description: null,
+      detectedObjects: [],
       suggestedDepartment: "Other",
       isValidCivicIssue: false,
       reasoning: `Analysis error: ${error.message}`,

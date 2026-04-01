@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, Loader2, Check, Info
 } from 'lucide-react'
 import { supabase, imageReports } from '../services/supabase'
+import { analyzeIssueImage } from '../services/imageAnalysis'
 
 // Simple UUID generator function
 const generateUUID = () => {
@@ -16,6 +17,31 @@ const generateUUID = () => {
     return v.toString(16)
   })
 }
+
+// Normalize severity from AI analysis
+const normalizeSeverity = (s) => {
+  const lower = (s || '').toLowerCase().trim();
+  if (lower.includes('critical') || lower.includes('severe') ||
+      lower.includes('emergency') || lower.includes('dangerous')) {
+    return 'critical';
+  }
+  if (lower.includes('high') || lower.includes('major') ||
+      lower.includes('serious') || lower.includes('urgent')) {
+    return 'high';
+  }
+  if (lower.includes('low') || lower.includes('minor') ||
+      lower.includes('cosmetic')) {
+    return 'low';
+  }
+  return 'medium';
+};
+
+// Normalize confidence to 0-100 scale
+const normalizeConfidence = (c) => {
+  if (!c) return 50;
+  if (c > 1) return Math.min(Math.round(c), 100);
+  return Math.min(Math.round(c * 100), 100);
+};
 
 const ReportIssue = () => {
   const navigate = useNavigate()
@@ -32,6 +58,7 @@ const ReportIssue = () => {
     images: [],
     category: '',
     severity: 'medium',
+    userSeverity: 'medium', // User-selected severity
     location: null,
     address: '',
     landmark: '',
@@ -39,6 +66,10 @@ const ReportIssue = () => {
     pinCode: '',
     termsAccepted: false
   })
+
+  // Separate state for File objects and preview URLs
+  const [imageFiles, setImageFiles] = useState([])     // actual File objects for API
+  const [imagePreviews, setImagePreviews] = useState([]) // URLs for display only
 
   // AI classification
   const [isClassifying, setIsClassifying] = useState(false)
@@ -51,6 +82,18 @@ const ReportIssue = () => {
   // Map state
   const [mapCenter] = useState([19.0760, 72.8777]) // Mumbai
   const [markerPosition, setMarkerPosition] = useState(null)
+
+  // Silently capture accurate location immediately on load
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setMarkerPosition(prev => prev || [pos.coords.latitude, pos.coords.longitude])
+        },
+        () => {} // silently fail if denied
+      )
+    }
+  }, [])
 
   // File upload
   const [isDragOver, setIsDragOver] = useState(false)
@@ -132,45 +175,65 @@ const ReportIssue = () => {
       severity,
       confidence: Math.round(confidence * 100),
       icon: categories[matchedCategory].icon,
-      color: categories[matchedCategory].color
+      color: categories[matchedCategory].color,
+      ai_description: null
     }
   }, [])
 
-  // Image Analysis Logic
-  const analyzeImage = useCallback((filename) => {
-    const name = filename.toLowerCase()
-    
-    let category = 'Municipal Administration'
-    let detectedObjects = ['urban area', 'civic infrastructure']
-    
-    if (name.includes('water') || name.includes('pipe') || name.includes('leak') || name.includes('flood')) {
-      category = 'Water Supply'
-      detectedObjects = ['pipe', 'water leak', 'wet surface']
-    } else if (name.includes('road') || name.includes('pothole') || name.includes('crack') || name.includes('street')) {
-      category = 'Roads & Footpaths'
-      detectedObjects = ['road surface', 'crack', 'asphalt damage']
-    } else if (name.includes('light') || name.includes('lamp') || name.includes('dark')) {
-      category = 'Street Lighting'
-      detectedObjects = ['street pole', 'light fixture', 'electrical']
-    } else if (name.includes('trash') || name.includes('garbage') || name.includes('waste')) {
-      category = 'Sanitation & Waste'
-      detectedObjects = ['waste material', 'garbage pile', 'debris']
-    } else if (name.includes('park') || name.includes('tree') || name.includes('garden')) {
-      category = 'Parks & Gardens'
-      detectedObjects = ['vegetation', 'park bench', 'green area']
-    } else if (name.includes('fight') || name.includes('crime') || name.includes('unsafe')) {
-      category = 'Public Safety'
-      detectedObjects = ['public space', 'pedestrian area']
+  // Image Analysis Logic - REAL GROQ API
+  const analyzeImage = async (file) => {
+    // Guard clause — make sure it's a real File
+    if (!file || !(file instanceof Blob)) {
+      console.error("analyzeImage: invalid file passed:", file);
+      return {
+        issueType: 'other',
+        confidence: 0,
+        severity: 'low',
+        suggestedDepartment: 'Other',
+        isValidCivicIssue: false,
+        reasoning: 'Invalid file provided',
+        ai_description: null,
+        detectedObjects: []
+      };
     }
     
-    const confidence = Math.floor(Math.random() * 15) + 80 // 80-94%
-    
-    return {
-      category,
-      detectedObjects,
-      confidence
+    try {
+      console.log("1. analyzeImage called with file:", file.name, file.type, file.size);
+      
+      // Convert file to base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = () => reject(new Error("FileReader failed"));
+        reader.readAsDataURL(file);  // file is now guaranteed to be a Blob
+      });
+
+      console.log("2. base64 length:", base64.length);
+      console.log("3. Calling Groq API...");
+
+      // Call real Groq API
+      const result = await analyzeIssueImage(base64, file.type);
+
+      console.log("4. Raw Groq result:", result);
+      console.log("5. ai_description:", result?.ai_description);
+      console.log("6. detectedObjects:", result?.detectedObjects);
+      
+      return result;
+    } catch (error) {
+      console.error("Image analysis error:", error);
+      return {
+        issueType: 'other',
+        confidence: 0,
+        severity: 'low',
+        suggestedDepartment: 'Other',
+        isValidCivicIssue: false,
+        reasoning: 'Analysis failed',
+        ai_description: null,
+        detectedObjects: [],
+        error: error.message
+      };
     }
-  }, [])
+  };
 
   // Trigger AI classification
   useEffect(() => {
@@ -190,76 +253,70 @@ const ReportIssue = () => {
     }
   }, [formData.title, formData.description, classifyIssue])
 
-  // Trigger image analysis when images are uploaded
-  useEffect(() => {
-    if (formData.images.length > 0) {
-      setIsAnalyzingImage(true)
-      const timer = setTimeout(() => {
-        const latestImage = formData.images[formData.images.length - 1]
-        const result = analyzeImage(latestImage.name)
-        setImageAnalysis(result)
-        updateCombinedResult()
-        setIsAnalyzingImage(false)
-      }, 1800)
-      
-      return () => clearTimeout(timer)
-    }
-  }, [formData.images, analyzeImage])
-
   // Update combined result when both analyses are available
-  const updateCombinedResult = useCallback(() => {
-    let finalCategory = ''
-    let finalSeverity = 'medium'
-    let finalConfidence = 0
+  const updateCombinedResult = ({ 
+    imageAnalysis: imgResult = null, 
+    textAnalysis: txtResult = null,
+    hasImage = false,
+    hasText = false 
+  } = {}) => {
     
-    if (textAnalysis && imageAnalysis) {
-      // Both available - combine them
-      if (textAnalysis.category === imageAnalysis.category) {
-        finalCategory = textAnalysis.category
-        finalConfidence = Math.round((textAnalysis.confidence + imageAnalysis.confidence) / 2)
-      } else {
-        // Use text analysis as primary, image as secondary
-        finalCategory = textAnalysis.category
-        finalConfidence = Math.round(textAnalysis.confidence * 0.7 + imageAnalysis.confidence * 0.3)
-      }
-      finalSeverity = textAnalysis.severity
-    } else if (textAnalysis) {
-      // Only text available
-      finalCategory = textAnalysis.category
-      finalSeverity = textAnalysis.severity
-      finalConfidence = textAnalysis.confidence
-    } else if (imageAnalysis) {
-      // Only image available
-      finalCategory = imageAnalysis.category
-      finalConfidence = imageAnalysis.confidence
-    }
+    console.log("updateCombinedResult called with params:", {
+      imgResult,
+      txtResult,
+      hasImage,
+      hasText
+    });
     
-    if (finalCategory) {
-      const categories = {
-        'Water Supply': { icon: '💧', color: '#0077B6' },
-        'Roads & Footpaths': { icon: '🚧', color: '#92400E' },
-        'Street Lighting': { icon: '💡', color: '#D97706' },
-        'Sanitation & Waste': { icon: '🗑️', color: '#4A4E69' },
-        'Parks & Gardens': { icon: '🌳', color: '#2A9D8F' },
-        'Public Safety': { icon: '🚨', color: '#C1121F' },
-        'Municipal Administration': { icon: '🏢', color: '#6B6560' }
-      }
-      
-      setAiClassification({
-        category: finalCategory,
-        severity: finalSeverity,
-        confidence: finalConfidence,
-        icon: categories[finalCategory].icon,
-        color: categories[finalCategory].color
-      })
-      
-      setFormData(prev => ({
-        ...prev,
-        category: finalCategory,
-        severity: finalSeverity
-      }))
+    // Use passed parameters directly, NOT state variables
+    const finalImageAnalysis = imgResult;
+    const finalTextAnalysis = txtResult;
+    
+    // Determine final category
+    let finalCategory = null;
+    let finalConfidence = 0;
+    let finalSeverity = 'medium';
+    let finalDepartment = null;
+
+    if (finalImageAnalysis?.issueType) {
+      finalCategory = finalImageAnalysis.issueType;
+      finalConfidence = Math.round((finalImageAnalysis.confidence || 0) * 100);
+      finalSeverity = finalImageAnalysis.severity || 'medium';
+      finalDepartment = finalImageAnalysis.suggestedDepartment;
     }
-  }, [textAnalysis, imageAnalysis])
+
+    if (!finalCategory) {
+      console.log("No finalCategory - imageAnalysis was:", finalImageAnalysis);
+      return;
+    }
+
+    // Build the classification object
+    const categories = {
+      'pothole': { icon: '🕳️', color: '#D4522A' },
+      'garbage': { icon: '🗑️', color: '#E9A84C' },
+      'streetlight': { icon: '💡', color: '#E9A84C' },
+      'water_leak': { icon: '💧', color: '#2A9D8F' },
+      'road_damage': { icon: '🛣️', color: '#D4522A' },
+      'graffiti': { icon: '🎨', color: '#D4522A' },
+      'fallen_tree': { icon: '🌳', color: '#2A9D8F' },
+      'sewage': { icon: '🚽', color: '#6B6560' },
+      'traffic': { icon: '🚦', color: '#D4522A' },
+      'other': { icon: '🏢', color: '#6B6560' }
+    };
+
+    const classification = {
+      category: finalCategory,
+      severity: finalSeverity,
+      confidence: finalConfidence,
+      icon: categories[finalCategory]?.icon || '🏢',
+      color: categories[finalCategory]?.color || '#6B6560',
+      ai_description: finalImageAnalysis?.ai_description || null,
+      detectedObjects: finalImageAnalysis?.detectedObjects || [],
+    };
+
+    console.log("Setting aiClassification:", classification);
+    setAiClassification(classification);
+  };
 
   // File upload handlers
   const handleDrop = useCallback((e) => {
@@ -275,33 +332,67 @@ const ReportIssue = () => {
     handleFiles(files)
   }, [])
 
-  const handleFiles = (files) => {
+  const handleFiles = async (files) => {
+    // Validate files
     const validFiles = files.filter(file => 
       file.type.startsWith('image/') && file.size <= 10 * 1024 * 1024
-    )
+    );
     
-    const filePromises = validFiles.map(file => 
-      new Promise((resolve) => {
-        // Create a temporary URL for preview
-        const tempUrl = URL.createObjectURL(file)
-        resolve({
-          id: generateUUID(),
-          name: file.name,
-          url: tempUrl, // Temporary URL for preview
-          file: file, // Keep the actual file for upload
-          size: file.size,
-          type: file.type,
-          uploaded: false // Not yet uploaded to Supabase
-        })
-      })
-    )
+    if (validFiles.length === 0) {
+      console.error("No valid files selected");
+      return;
+    }
+
+    // Store actual File objects for API analysis
+    setImageFiles(validFiles);
     
-    Promise.all(filePromises).then(newImages => {
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, ...newImages].slice(0, 4)
-      }))
-    })
+    // Create preview URLs (synchronous, no Promise needed)
+    const previews = validFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(previews);
+    
+    // Create the formatted objects for form submission
+    const newImages = validFiles.map(file => ({
+      id: generateUUID(),
+      name: file.name,
+      url: URL.createObjectURL(file), // Create fresh URL for form
+      file: file, // Keep the actual file for upload
+      size: file.size,
+      type: file.type,
+      uploaded: false // Not yet uploaded to Supabase
+    }));
+    
+    // Update form data
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ...newImages].slice(0, 4)
+    }));
+    
+    // Analyze the FIRST image immediately
+    setIsAnalyzingImage(true);
+    try {
+      const result = await analyzeImage(validFiles[0]);
+      setImageAnalysis(result);          // still update state for other uses
+      updateCombinedResult({             // pass fresh result directly ✅
+        imageAnalysis: result,
+        textAnalysis: textAnalysis,      // current state value (or null)
+        hasImage: true,
+        hasText: !!textAnalysis
+      });
+    } catch (error) {
+      console.error('Image analysis failed:', error);
+      setImageAnalysis({
+        issueType: 'other',
+        confidence: 0,
+        severity: 'low',
+        suggestedDepartment: 'Other',
+        isValidCivicIssue: false,
+        reasoning: 'Analysis failed',
+        ai_description: null,
+        detectedObjects: []
+      });
+    } finally {
+      setIsAnalyzingImage(false);
+    }
   }
 
   const removeImage = (imageId) => {
@@ -366,14 +457,23 @@ const ReportIssue = () => {
         }
       }
 
+      // Use higher of AI vs user severity
+      const severityRank = { low: 1, medium: 2, high: 3, critical: 4 };
+      const finalSeverity =
+        severityRank[formData.userSeverity] >= severityRank[formData.severity]
+          ? formData.userSeverity : formData.severity;
+
+      // Use user's selected category or AI category as fallback
+      const finalCategory = formData.category || aiClassification?.category || 'Municipal Administration';
+
       // Create AI result object for the existing schema
       const aiResult = {
-        issueType: formData.category,
-        suggestedDepartment: formData.category,
-        severity: formData.severity,
+        issueType: finalCategory,
+        suggestedDepartment: finalCategory,
+        severity: normalizeSeverity(finalSeverity),
         description: formData.description,
-        reasoning: `AI classified this as ${formData.category} with ${formData.severity} severity`,
-        confidence: 85,
+        reasoning: `AI classified this as ${finalCategory} with ${finalSeverity} severity`,
+        confidence: normalizeConfidence(aiClassification?.confidence || 85),
         isValidCivicIssue: true
       }
 
@@ -385,9 +485,9 @@ const ReportIssue = () => {
         title: formData.title,
         description: formData.description,
         location: {
-          latitude: markerPosition[0],
-          longitude: markerPosition[1],
-          address: formData.address
+          latitude: markerPosition ? markerPosition[0] : mapCenter[0],
+          longitude: markerPosition ? markerPosition[1] : mapCenter[1],
+          address: formData.address || 'Location detected automatically'
         },
         imageUrl: uploadedImages[0]?.url || null,
         imagePath: uploadedImages[0]?.path || null,
@@ -415,6 +515,7 @@ const ReportIssue = () => {
       images: [],
       category: '',
       severity: 'medium',
+      userSeverity: 'medium',
       location: null,
       address: '',
       landmark: '',
@@ -661,11 +762,58 @@ const ReportIssue = () => {
                       </label>
                       <textarea
                         rows={4}
-                        placeholder="Describe the issue in detail — when did you notice it? How severe is it?"
+                        placeholder="Describe issue in detail — when did you notice it? How severe is it?"
                         value={formData.description}
                         onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                         className="w-full bg-white border border-civic-muted rounded-xl px-4 py-3 focus:border-[#D4522A] outline-none ring-2 ring-[#FBF0EB] transition-colors resize-none"
                       />
+                    </div>
+
+                    {/* Severity Selector */}
+                    <div>
+                      <label className="block font-medium text-civic-textPrimary mb-3">
+                        How urgent is this issue? <span className="text-red-500">*</span>
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { value: 'low', label: 'Low', desc: 'Minor, low impact', color: '#16a34a', bg: '#f0fdf4' },
+                          { value: 'medium', label: 'Medium', desc: 'Moderate issue', color: '#d97706', bg: '#fefce8' },
+                          { value: 'high', label: 'High', desc: 'Urgent, affects daily life', color: '#c2410c', bg: '#fff7ed' },
+                          { value: 'critical', label: 'Critical', desc: 'Safety emergency', color: '#dc2626', bg: '#fef2f2' },
+                        ].map((option) => (
+                          <label key={option.value} className="relative cursor-pointer">
+                            <input
+                              type="radio"
+                              name="userSeverity"
+                              value={option.value}
+                              checked={formData.userSeverity === option.value}
+                              onChange={(e) => setFormData(prev => ({ ...prev, userSeverity: e.target.value }))}
+                              className="sr-only"
+                            />
+                            <div className={`p-4 rounded-xl border-2 transition-all ${
+                              formData.userSeverity === option.value
+                                ? 'border-opacity-100 shadow-sm'
+                                : 'border-opacity-30 hover:border-opacity-50'
+                            }`}
+                                 style={{
+                                   borderColor: formData.userSeverity === option.value ? option.color : '#e5e7eb',
+                                   backgroundColor: formData.userSeverity === option.value ? option.bg : '#ffffff'
+                                 }}>
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className={`w-3 h-3 rounded-full ${
+                                  formData.userSeverity === option.value ? 'ring-2 ring-offset-2' : ''
+                                }`}
+                                     style={{
+                                       backgroundColor: option.color,
+                                       ringColor: option.color
+                                     }}></div>
+                                <span className="font-medium text-civic-textPrimary">{option.label}</span>
+                              </div>
+                              <div className="text-xs text-civic-textSecondary">{option.desc}</div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Image Upload */}
@@ -778,45 +926,26 @@ const ReportIssue = () => {
                       </div>
                     )}
 
-                    {/* Image Analysis Result */}
-                    {imageAnalysis && !isAnalyzingImage && !textAnalysis && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-2xl border border-civic-muted p-6"
-                      >
-                        <div className="text-xs font-medium text-[#2A9D8F] uppercase tracking-wider mb-3">
-                          📸 Image Analysis Result
-                        </div>
-                        
-                        <div className="mb-4">
-                          <div className="text-sm text-civic-textSecondary mb-2">Objects detected:</div>
-                          <div className="flex flex-wrap gap-2">
-                            {imageAnalysis.detectedObjects.map((obj, i) => (
-                              <span key={i} className="px-2 py-1 bg-[#F8F6F1] text-civic-textSecondary rounded-full text-xs">
-                                {obj}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="mb-4">
-                          <div className="text-sm text-civic-textSecondary mb-1">Visual classification:</div>
-                          <div className="font-medium text-civic-textPrimary">
-                            {imageAnalysis.category}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                          <div className="text-sm text-civic-textSecondary">
-                            Confidence from image: {imageAnalysis.confidence}%
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-
                     {/* Combined Analysis Result */}
-                    {aiClassification && !isClassifying && !isAnalyzingImage && (
+                    {(() => {
+                      const cardData = aiClassification || imageAnalysis;
+                      const visibilityCheck = {
+                        aiClassification: !!aiClassification,
+                        imageAnalysis: !!imageAnalysis,
+                        hasData: !!cardData,
+                        isClassifying,
+                        isAnalyzingImage,
+                        shouldShow: !!cardData && !isClassifying && !isAnalyzingImage,
+                        aiClassificationData: aiClassification,
+                        imageAnalysisData: imageAnalysis,
+                        textAnalysisData: textAnalysis
+                      };
+                      console.log("CARD VISIBILITY CHECK:", visibilityCheck);
+                      console.log("aiClassification value:", aiClassification);
+                      console.log("imageAnalysis value:", imageAnalysis);
+                      console.log("Final shouldShow:", visibilityCheck.shouldShow);
+                      return !!cardData && !isClassifying && !isAnalyzingImage;
+                    })() && (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -853,9 +982,23 @@ const ReportIssue = () => {
                           <div className="mb-3">
                             <div className="text-sm text-civic-textSecondary mb-1">📸 Image Analysis:</div>
                             <div className="flex items-center gap-2">
-                              <span className="text-2xl">{aiClassification.icon}</span>
-                              <span className="font-medium text-civic-textPrimary">{imageAnalysis.category}</span>
-                              <span className="text-xs text-civic-textSecondary">({imageAnalysis.confidence}%)</span>
+                              <span className="text-2xl">{(aiClassification || imageAnalysis).icon}</span>
+                              <span className="font-medium text-civic-textPrimary">{imageAnalysis.issueType}</span>
+                              <span className="text-xs text-civic-textSecondary">({Math.round(imageAnalysis.confidence * 100)}%)</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Objects Detected */}
+                        {imageAnalysis?.detectedObjects && imageAnalysis.detectedObjects.length > 0 && (
+                          <div className="mb-3">
+                            <div className="text-sm text-civic-textSecondary mb-1">🏷️ Objects Detected:</div>
+                            <div className="flex flex-wrap gap-2">
+                              {imageAnalysis.detectedObjects.map((obj, i) => (
+                                <span key={i} className="px-2 py-1 bg-[#F8F6F1] text-civic-textSecondary rounded-full text-xs">
+                                  {obj}
+                                </span>
+                              ))}
                             </div>
                           </div>
                         )}
@@ -869,22 +1012,33 @@ const ReportIssue = () => {
                         <div className="mb-3">
                           <div className="text-sm text-civic-textSecondary mb-2">Final Classification:</div>
                           <div className="flex items-center gap-3">
-                            <span className="text-2xl">{aiClassification.icon}</span>
-                            <span className="font-bold text-civic-textPrimary text-lg">{aiClassification.category}</span>
-                            <div className={`px-3 py-1 rounded-full text-xs font-medium ${getSeverityColor(aiClassification.severity)}`}>
-                              {aiClassification.severity.toUpperCase()}
+                            <span className="text-2xl">{(aiClassification || imageAnalysis).icon}</span>
+                            <span className="font-bold text-civic-textPrimary text-lg">{(aiClassification || imageAnalysis).category}</span>
+                            <div className={`px-3 py-1 rounded-full text-xs font-medium ${getSeverityColor((aiClassification || imageAnalysis).severity)}`}>
+                              {(aiClassification || imageAnalysis).severity.toUpperCase()}
                             </div>
                           </div>
                           <div className="text-sm text-civic-textSecondary mt-1">
-                            Combined confidence: {aiClassification.confidence}%
+                            Combined confidence: {(aiClassification || imageAnalysis).confidence}%
                           </div>
                           <div className="h-1.5 rounded-full bg-[#E8E4DC] mt-2 overflow-hidden">
                             <div
                               className="bg-[#2A9D8F] h-full transition-all duration-500"
-                              style={{ width: `${aiClassification.confidence}%` }}
+                              style={{ width: `${(aiClassification || imageAnalysis).confidence}%` }}
                             />
                           </div>
                         </div>
+
+                        {(aiClassification || imageAnalysis)?.ai_description && (
+                          <div className="mb-3 pt-3 border-t border-[#2A9D8F]/20">
+                            <div className="flex items-center gap-1.5 text-sm font-medium text-civic-textSecondary mb-1.5">
+                              <span className="text-[#2A9D8F]">🔍</span> AI Observations
+                            </div>
+                            <div className="text-sm text-civic-textSecondary italic leading-relaxed pl-1">
+                              "{(aiClassification || imageAnalysis).ai_description}"
+                            </div>
+                          </div>
+                        )}
 
                         <div className="text-xs text-civic-textSecondary">
                           AI has automatically routed this to the correct department.

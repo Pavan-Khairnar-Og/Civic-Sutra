@@ -438,7 +438,7 @@ export const imageReports = {
         ai_issue_type: aiResult.issueType,
         ai_department: aiResult.suggestedDepartment,
         ai_severity: aiResult.severity,
-        ai_description: aiResult.description,
+        ai_description: aiResult?.ai_description || null,
         ai_reasoning: aiResult.reasoning,
         ai_confidence: aiResult.confidence,
         ai_valid: aiResult.isValidCivicIssue,
@@ -447,7 +447,7 @@ export const imageReports = {
         status: 'pending',
         assigned_department: aiResult.suggestedDepartment,
         priority: 'medium', // Will be calculated by trigger
-        priority_score: 0, // Will be calculated by trigger
+        // priority_score is calculated by DB trigger, do not include
         is_duplicate: false,
         duplicate_of: null,
         upvotes: 0,
