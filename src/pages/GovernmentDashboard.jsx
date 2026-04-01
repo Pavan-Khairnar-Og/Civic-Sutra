@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
@@ -16,6 +17,7 @@ import { MapPin, Calendar, User, AlertTriangle, Clock, CheckCircle, TrendingUp, 
  */
 const GovernmentDashboard = () => {
   const { isGov } = useAuth()
+  const navigate = useNavigate()
   const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -476,7 +478,7 @@ const IssueRow = ({ report, onStatusUpdate }) => {
       <td className="px-6 py-4">
         <div className="max-w-[240px]">
           {/* Fix 2: Real title prominently displayed */}
-          <div className="text-sm font-bold truncate group-hover:text-blue-500 transition-colors cursor-pointer" onClick={() => window.location.href=`/admin/issue/${report.id}`}>
+          <div className="text-sm font-bold truncate group-hover:text-blue-500 transition-colors cursor-pointer" onClick={() => navigate(`/admin/issue/${report.id}`)}>
             {report.title || 'Untitled Issue'}
           </div>
           <div className="text-[11px] text-gray-400 font-mono uppercase truncate opacity-60">ID: {report.id?.substring(0, 8)}</div>
@@ -513,7 +515,7 @@ const IssueRow = ({ report, onStatusUpdate }) => {
       </td>
       <td className="px-6 py-4 text-right">
         <button 
-          onClick={() => window.location.href=`/admin/issue/${report.id}`}
+          onClick={() => navigate(`/admin/issue/${report.id}`)}
           className="text-xs font-bold text-blue-500 hover:text-blue-600 underline underline-offset-4"
         >
           Details
