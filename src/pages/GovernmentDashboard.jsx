@@ -7,7 +7,7 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Skeleton from '../components/ui/Skeleton'
 import { useToast } from '../components/ui/Toast'
-import { MapPin, Calendar, User, AlertTriangle, Clock, CheckCircle } from 'lucide-react'
+import { MapPin, Calendar, User, AlertTriangle, Clock, CheckCircle, TrendingUp, ShieldCheck } from 'lucide-react'
 
 /**
  * Professional Government Dashboard
@@ -23,7 +23,17 @@ const GovernmentDashboard = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('all')
   const [sortBy, setSortBy] = useState('newest')
   const [selectedIssues, setSelectedIssues] = useState([])
-  const [analytics, setAnalytics] = useState({})
+  const [analytics, setAnalytics] = useState({
+    total: 0,
+    resolved: 0,
+    pending: 0,
+    inProgress: 0,
+    resolvedToday: 0,
+    avgResolution: 'No data',
+    departmentStats: [],
+    priorityStats: [],
+    topLocations: []
+  })
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const { addToast } = useToast()
 
@@ -64,20 +74,50 @@ const GovernmentDashboard = () => {
       setError('')
       addToast('Loading reports...', 'info')
 
-      const { data, error } = await supabase
+      // Fetch reports first
+      const { data: reportsData, error: reportsError } = await supabase
         .from('reports')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (error) {
-        throw error
+      if (reportsError) throw reportsError
+
+      if (!reportsData || reportsData.length === 0) {
+        setReports([])
+        calculateAnalytics([])
+        return
       }
 
-      console.log('Government Dashboard - Loaded reports:', data?.length || 0, 'reports')
-      console.log('Report details:', data)
-      setReports(data || [])
-      calculateAnalytics(data || [])
-      addToast(`Successfully loaded ${data?.length || 0} reports`, 'success')
+      // Get unique non-null user IDs
+      const userIds = [...new Set(reportsData.map(r => r.user_id).filter(id => id && id !== ''))]
+      
+      let profilesMap = {}
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', userIds)
+        
+        if (!profilesError && profilesData) {
+          profilesMap = profilesData.reduce((acc, p) => {
+            acc[p.user_id] = p
+            return acc
+          }, {})
+        } else if (profilesError) {
+          console.warn('Could not fetch profiles for join:', profilesError.message)
+        }
+      }
+
+      // Manual join: attach profiles to reports
+      const enrichedReports = reportsData.map(report => ({
+        ...report,
+        profiles: profilesMap[report.user_id] || null
+      }))
+
+      console.log('Government Dashboard - Loaded and enriched reports:', enrichedReports.length)
+      setReports(enrichedReports)
+      calculateAnalytics(enrichedReports)
+      addToast(`Successfully loaded ${enrichedReports.length} reports`, 'success')
     } catch (err) {
       setError(err.message)
       addToast(`Failed to fetch reports: ${err.message}`, 'error')
@@ -107,7 +147,7 @@ const GovernmentDashboard = () => {
     // Priority breakdown - use ai_severity instead of priority
     const priorityStats = priorities.map(priority => ({
       ...priority,
-      count: reportsData.filter(r => r.ai_severity === priority.id).length
+      count: reportsData.filter(r => r.ai_severity?.toLowerCase() === priority.id.toLowerCase()).length
     }))
 
     // Top problem areas (by location)
@@ -122,11 +162,44 @@ const GovernmentDashboard = () => {
       .slice(0, 5)
       .map(([location, count]) => ({ location, count }))
 
+    const resolvedToday = reportsData.filter(r => {
+      const updated = new Date(r.updated_at || r.created_at);
+      const today = new Date();
+      return r.status === 'resolved' && 
+             updated.getDate() === today.getDate() &&
+             updated.getMonth() === today.getMonth() &&
+             updated.getFullYear() === today.getFullYear();
+    }).length;
+
+    // Calculate Average Resolution Time
+    const resolvedReports = reportsData.filter(r => 
+      r.status === 'resolved' && r.updated_at && r.created_at
+    );
+
+    let avgResolution = 'No data';
+    if (resolvedReports.length > 0) {
+      const totalMs = resolvedReports.reduce((sum, r) => {
+        const created = new Date(r.created_at);
+        const updated = new Date(r.updated_at);
+        return sum + (updated - created);
+      }, 0);
+      const avgMs = totalMs / resolvedReports.length;
+      const avgDays = avgMs / (1000 * 60 * 60 * 24);
+      
+      if (avgDays < 1) {
+        avgResolution = `${Math.round(avgDays * 24)}h`;
+      } else {
+        avgResolution = `${avgDays.toFixed(1)}d`;
+      }
+    }
+
     setAnalytics({
-      total,
-      resolved,
-      pending,
-      inProgress,
+      total: total || 0,
+      resolved: resolved || 0,
+      pending: pending || 0,
+      inProgress: inProgress || 0,
+      resolvedToday: resolvedToday || 0,
+      avgResolution: avgResolution || "No data",
       departmentStats,
       priorityStats,
       topLocations
@@ -278,384 +351,176 @@ const GovernmentDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-white shadow-lg transition-all duration-300 flex flex-col`}>
-        {/* Sidebar Header */}
-        <div className="p-4 border-b">
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            {sidebarCollapsed ? '☰' : '☰'}
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          {[
-            { id: 'issues', name: 'All Issues', icon: '📋' },
-            { id: 'departments', name: 'Departments', icon: '🏛️' },
-            { id: 'analytics', name: 'Analytics', icon: '📊' }
-          ].map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveView(item.id)}
-              className={`w-full text-left p-3 rounded-lg transition-colors flex items-center space-x-3 ${
-                activeView === item.id 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'hover:bg-gray-100'
-              }`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!sidebarCollapsed && <span>{item.name}</span>}
-            </button>
-          ))}
-        </nav>
+    <div className="space-y-8">
+      {/* Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricCard 
+          title="Total Active" 
+          value={analytics.total - analytics.resolved} 
+          icon={<AlertTriangle className="text-blue-500" />}
+          trend="+5% from last week"
+        />
+        <MetricCard 
+          title="Critical Issues" 
+          value={analytics.priorityStats?.find(p => p.id === 'critical')?.count || 0} 
+          icon={<ShieldCheck className="text-red-500" />}
+          color="text-red-600"
+        />
+        <MetricCard 
+          title="Resolved Today" 
+          value={analytics.resolvedToday || 0} 
+          icon={<CheckCircle className="text-green-500" />}
+        />
+        <MetricCard 
+          title="Avg. Resolution" 
+          value={analytics.avgResolution || "No data"} 
+          icon={<Clock className="text-orange-500" />}
+        />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Government Dashboard
-            </h1>
-            <Badge variant="info">
-              {reports.length} Total Issues
-            </Badge>
+      {/* Main Content Area */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+          <h2 className="text-lg font-bold">Issue Command Center</h2>
+          <div className="flex gap-3">
+            <select 
+              value={selectedDepartment} 
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="bg-gray-50 dark:bg-gray-900 border-none rounded-lg text-sm px-3 py-2"
+            >
+              {departments.map(dept => <option key={dept.id} value={dept.id}>{dept.name}</option>)}
+            </select>
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 p-6 overflow-auto">
-          {loading ? (
-            <div className="space-y-6">
-              {/* Loading Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Skeleton variant="card" />
-                <Skeleton variant="card" />
-                <Skeleton variant="card" />
-                <Skeleton variant="card" />
-              </div>
-              
-              {/* Loading Table */}
-              <div className="bg-white rounded-lg shadow overflow-hidden">
-                <TableSkeleton rows={5} />
-              </div>
-              
-              {/* Loading Departments */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <Skeleton variant="card" />
-                <Skeleton variant="card" />
-                <Skeleton variant="card" />
-              </div>
-            </div>
-          ) : error ? (
-            <div className="text-center text-red-600 py-8">
-              {error}
-            </div>
-          ) : (
-            <>
-              {/* Issues View */}
-              {activeView === 'issues' && (
-                <div className="space-y-6">
-                  {/* Filters */}
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <h2 className="text-lg font-semibold mb-4">Filters & Sorting</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Department Filter */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Department
-                        </label>
-                        <select
-                          value={selectedDepartment}
-                          onChange={(e) => setSelectedDepartment(e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        >
-                          {departments.map(dept => (
-                            <option key={dept.id} value={dept.id}>
-                              {dept.icon} {dept.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Sort */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Sort By
-                        </label>
-                        <select
-                          value={sortBy}
-                          onChange={(e) => setSortBy(e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="newest">Newest First</option>
-                          <option value="priority">Priority</option>
-                          <option value="location">Location</option>
-                        </select>
-                      </div>
-
-                      {/* Bulk Actions */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Bulk Actions ({selectedIssues.length} selected)
-                        </label>
-                        <div className="space-y-2">
-                          <Button
-                            onClick={() => bulkUpdateStatus('in_progress')}
-                            disabled={selectedIssues.length === 0}
-                            variant="outline"
-                            className="w-full"
-                          >
-                            Mark In Progress
-                          </Button>
-                          <Button
-                            onClick={() => bulkUpdateStatus('resolved')}
-                            disabled={selectedIssues.length === 0}
-                            variant="outline"
-                            className="w-full"
-                          >
-                            Mark Resolved
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Issues Table */}
-                  <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              <input
-                                type="checkbox"
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedIssues(filteredReports.map(r => r.id))
-                                  } else {
-                                    setSelectedIssues([])
-                                  }
-                                }}
-                                className="rounded border-gray-300"
-                              />
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Issue
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Department
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Priority
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Status
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Actions
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {filteredReports.map(report => (
-                            <tr key={report.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedIssues.includes(report.id)}
-                                  onChange={() => toggleIssueSelection(report.id)}
-                                  className="rounded border-gray-300"
-                                />
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="flex items-center space-x-3">
-                                  {report.image_url && (
-                                    <div className="relative">
-                                      <img
-                                        src={report.image_url}
-                                        alt="Issue"
-                                        className="h-12 w-12 rounded-lg object-cover cursor-pointer hover:opacity-80"
-                                        onClick={() => {
-                                          const newWindow = window.open()
-                                          newWindow.document.write(`<img src="${report.image_url}" style="max-width:100%;height:auto;" />`)
-                                          newWindow.document.title = report.title
-                                        }}
-                                      />
-                                    </div>
-                                  )}
-                                  <div>
-                                    <div className="text-sm font-medium text-gray-900">
-                                      {report.title || 'Untitled Issue'}
-                                    </div>
-                                    <div className="text-sm text-gray-500">
-                                      {report.description?.substring(0, 100)}...
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <Badge variant="outline">
-                                  {report.ai_issue_type || 'General'}
-                                </Badge>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <Badge className={priorities.find(p => p.id === report.ai_severity)?.color}>
-                                  {report.ai_severity ? report.ai_severity.charAt(0).toUpperCase() + report.ai_severity.slice(1) : 'Medium'}
-                                </Badge>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <Badge className={statuses.find(s => s.id === report.status)?.color}>
-                                  {report.status ? report.status.replace('_', ' ').toUpperCase() : 'PENDING'}
-                                </Badge>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                <div className="flex space-x-2">
-                                  {report.status === 'pending' && (
-                                    <Button
-                                      size="sm"
-                                      onClick={() => updateIssueStatus(report.id, 'in_progress')}
-                                    >
-                                      Start Work
-                                    </Button>
-                                  )}
-                                  {report.status === 'in_progress' && (
-                                    <Button
-                                      size="sm"
-                                      onClick={() => updateIssueStatus(report.id, 'resolved')}
-                                    >
-                                      Mark Resolved
-                                    </Button>
-                                  )}
-                                  {report.status === 'resolved' && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => updateIssueStatus(report.id, 'in_progress')}
-                                    >
-                                      Reopen
-                                    </Button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Departments View */}
-              {activeView === 'departments' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {analytics.departmentStats?.map(dept => (
-                    <Card key={dept.id} className="hover:shadow-lg transition-shadow">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {dept.icon} {dept.name}
-                        </h3>
-                        <Badge variant="info">
-                          {dept.count} issues
-                        </Badge>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Pending:</span>
-                          <span className="font-medium">{reports.filter(r => r.department === dept.id && r.status === 'pending').length}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">In Progress:</span>
-                          <span className="font-medium">{reports.filter(r => r.department === dept.id && r.status === 'in_progress').length}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Resolved:</span>
-                          <span className="font-medium">{reports.filter(r => r.department === dept.id && r.status === 'resolved').length}</span>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-
-              {/* Analytics View */}
-              {activeView === 'analytics' && (
-                <div className="space-y-6">
-                  {/* Overview Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Card>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-blue-600">{analytics.total}</div>
-                        <div className="text-gray-600">Total Issues</div>
-                      </div>
-                    </Card>
-                    <Card>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-green-600">{analytics.resolved}</div>
-                        <div className="text-gray-600">Resolved</div>
-                      </div>
-                    </Card>
-                    <Card>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-yellow-600">{analytics.pending}</div>
-                        <div className="text-gray-600">Pending</div>
-                      </div>
-                    </Card>
-                    <Card>
-                      <div className="text-center">
-                        <div className="text-3xl font-bold text-orange-600">{analytics.inProgress}</div>
-                        <div className="text-gray-600">In Progress</div>
-                      </div>
-                    </Card>
-                  </div>
-
-                  {/* Charts */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Priority Distribution */}
-                    <Card>
-                      <h3 className="text-lg font-semibold mb-4">Priority Distribution</h3>
-                      <div className="space-y-3">
-                        {analytics.priorityStats?.map(priority => (
-                          <div key={priority.id} className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <div className={`w-4 h-4 rounded ${priority.color}`}></div>
-                              <span>{priority.name}</span>
-                            </div>
-                            <Badge variant="outline">{priority.count}</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
-
-                    {/* Top Problem Areas */}
-                    <Card>
-                      <h3 className="text-lg font-semibold mb-4">Top Problem Areas</h3>
-                      <div className="space-y-3">
-                        {analytics.topLocations?.map((location, index) => (
-                          <div key={index} className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">
-                              Area {index + 1}
-                            </span>
-                            <Badge variant="outline">{location.count} issues</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-gray-50 dark:bg-gray-900/50 text-[11px] uppercase tracking-wider text-gray-500 font-bold">
+              <tr>
+                <th className="px-6 py-4">Priority Score</th>
+                <th className="px-6 py-4">Issue</th>
+                <th className="px-6 py-4">Category</th>
+                <th className="px-6 py-4">Reporter</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Reported</th>
+                <th className="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              {filteredReports.map(report => (
+                <IssueRow 
+                  key={report.id} 
+                  report={report} 
+                  onStatusUpdate={updateIssueStatus}
+                />
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   )
 }
 
-export default GovernmentDashboard
+/**
+ * Helper Components
+ */
+const MetricCard = ({ title, value, icon, trend, color = "text-gray-900" }) => (
+  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+    <div className="flex items-center justify-between mb-4">
+      <div className="p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">{icon}</div>
+      {trend && <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-full">{trend}</span>}
+    </div>
+    <div className="text-sm text-gray-500 font-medium">{title}</div>
+    <div className={`text-2xl font-bold ${color}`}>{value}</div>
+  </div>
+);
+
+const IssueRow = ({ report, onStatusUpdate }) => {
+  // Fix 1: Capped priority score calculation
+  const calculatePriority = (issue) => {
+    const severityScore = {
+      'critical': 40,
+      'high':     30,
+      'medium':   20,
+      'low':      10,
+    }[issue.ai_severity?.toLowerCase()] ?? 15;
+
+    const likeScore    = Math.min((issue.upvotes || 0) * 0.3, 30);
+    const similarScore = Math.min((issue.confirmations || 0) * 2, 20);
+    const aiScore      = Math.min((issue.ai_confidence || 0) * 0.1, 10);
+
+    return Math.min(Math.round(severityScore + likeScore + similarScore + aiScore), 100);
+  };
+
+  // Fix 3: Reporter name logic
+  const getReporterName = (issue) => {
+    if (issue.is_anonymous) return 'Anonymous';
+    const fullName = issue.profiles?.full_name;
+    if (fullName) return fullName.split(' ')[0]; // first name only
+    return 'Citizen';
+  };
+
+  const priorityScore = calculatePriority(report);
+  
+  return (
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors group">
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-2">
+          <span className={`text-sm font-bold ${priorityScore > 75 ? 'text-red-500' : 'text-gray-600'}`}>
+            {priorityScore}
+          </span>
+          <TrendingUp size={12} className={priorityScore > 75 ? 'text-red-500' : 'text-gray-400'} />
+        </div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="max-w-[240px]">
+          {/* Fix 2: Real title prominently displayed */}
+          <div className="text-sm font-bold truncate group-hover:text-blue-500 transition-colors cursor-pointer" onClick={() => window.location.href=`/admin/issue/${report.id}`}>
+            {report.title || 'Untitled Issue'}
+          </div>
+          <div className="text-[11px] text-gray-400 font-mono uppercase truncate opacity-60">ID: {report.id?.substring(0, 8)}</div>
+        </div>
+      </td>
+      <td className="px-6 py-4">
+        <span className="text-[11px] font-bold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-md">
+          {report.ai_issue_type || 'General'}
+        </span>
+      </td>
+      <td className="px-6 py-4 text-xs text-gray-500 font-medium">
+        {/* Fix 3 rendering */}
+        <div style={{color: '#6b7c72', fontSize: 13}}>
+          {getReporterName(report)}
+        </div>
+      </td>
+      <td className="px-6 py-4">
+        <select 
+          value={report.status}
+          onChange={(e) => onStatusUpdate(report.id, e.target.value)}
+          className={`text-[11px] font-bold border-none rounded-full px-3 py-1 cursor-pointer focus:ring-2 focus:ring-blue-500 ${
+            report.status === 'resolved' ? 'bg-green-100 text-green-700' :
+            report.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+            'bg-yellow-100 text-yellow-700'
+          }`}
+        >
+          <option value="pending">Pending</option>
+          <option value="in_progress">In Progress</option>
+          <option value="resolved">Resolved</option>
+        </select>
+      </td>
+      <td className="px-6 py-4 text-xs text-gray-500 font-medium">
+        {new Date(report.created_at).toLocaleDateString()}
+      </td>
+      <td className="px-6 py-4 text-right">
+        <button 
+          onClick={() => window.location.href=`/admin/issue/${report.id}`}
+          className="text-xs font-bold text-blue-500 hover:text-blue-600 underline underline-offset-4"
+        >
+          Details
+        </button>
+      </td>
+    </tr>
+  );
+};
+
+export default GovernmentDashboard;

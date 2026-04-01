@@ -20,23 +20,49 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html.dark {
+  background-color: #1e1a17 !important;
+  color: #e8e0d5;
+}
+
+html.dark body {
+  background-color: #1e1a17 !important;
+}
+
 /* Custom Leaflet styles */
 .leaflet-container {
   font-family: 'DM Sans', sans-serif;
 }
 
+/* Override Leaflet popup styles */
 .leaflet-popup-content-wrapper {
-  border-radius: 1rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  background: white;
+  border-radius: 16px !important;
+  border: 1px solid #E8E4DC;
+  box-shadow: 0 8px 32px rgba(26,26,26,0.12) !important;
+  padding: 0 !important;
+  overflow: hidden;
 }
 
 .leaflet-popup-content {
-  margin: 0;
-  border-radius: 1rem;
+  margin: 0 !important;
+  width: 240px !important;
 }
 
 .leaflet-popup-tip {
   background: white;
+}
+
+.leaflet-popup-tip-container {
+  display: none !important;
+}
+
+.leaflet-popup-close-button {
+  top: 8px !important;
+  right: 8px !important;
+  color: #6B6560 !important;
+  font-size: 18px !important;
+  z-index: 10;
 }
 
 .leaflet-control-zoom {
@@ -84,3 +110,146 @@ canvas {
 ::-webkit-scrollbar-track { background: #F8F6F1; }
 ::-webkit-scrollbar-thumb { background: #C8C4BC; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: #D4522A; }
+
+/* CivicSutra Dark Theme CSS Variables */
+:root {
+  /* Light mode colors */
+  --bg-page: #f5f2ed;
+  --bg-surface: #ffffff;
+  --bg-surface-light: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-raised: #f8fafc;
+  --bg-hover: #f3f4f6;
+  --bg-input: #f9fafb;
+  --border-default: #e5e7eb;
+  --border-subtle: #f3f4f6;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --text-hint: #d1d5db;
+  --accent: #c2410c;
+  --accent-hover: #e8692a;
+  --accent-light: #f0a400;
+  --success-bg: #10b981;
+  --success-text: #065f46;
+  --warning-bg: #f59e0b;
+  --warning-text: #d97706;
+  --danger-bg: #dc2626;
+  --danger-text: #7f1d1d;
+  --info-bg: #3b82f6;
+  --info-text: #0c4a6e;
+  --muted: #6b7280;
+  --navbar-bg: #ffffff;
+  --navbar-border: #e5e7eb;
+  --sidebar-bg: #f8fafc;
+}
+
+[data-theme="dark"] {
+  /* Warm slate/charcoal dark theme */
+  --bg-page: #1e1a17;
+  --bg-surface: #26221e;
+  --bg-surface-light: #2e2924;
+  --bg-card: #26221e;
+  --bg-card-raised: #302b26;
+  --bg-hover: #2a3a32;
+  --bg-input: #2e2924;
+  --border-default: #4a4035;
+  --border-subtle: #3d4a4a;
+  --text-primary: #f8fafc;
+  --text-secondary: #a89880;
+  --text-muted: #6e757d;
+  --text-hint: #4a6a58;
+  --accent: #c2410c;
+  --accent-hover: #d97706;
+  --accent-light: #e8692a;
+  --success-bg: #059669;
+  --success-text: #a3d9b1;
+  --warning-bg: #d97706;
+  --warning-text: #fef3c7;
+  --danger-bg: #dc2626;
+  --danger-text: #fca5a5;
+  --info-bg: #1e40af;
+  --info-text: #93c5fd;
+  --muted: #6e757d;
+  --navbar-bg: #2d3748;
+  --navbar-border: #4a5568;
+  --sidebar-bg: #111827;
+}
+
+[data-theme="dark"][data-role="admin"] {
+  /* Sage-tinted admin theme */
+  --bg-page: #181e1b;
+  --bg-surface: #1e2a24;
+  --bg-surface-light: #243028;
+  --bg-card: #1e293b;
+  --bg-card-raised: #211d1a;
+  --bg-hover: #2a3a32;
+  --bg-input: #1a2520;
+  --border-default: #3a4a42;
+  --border-subtle: #2e3e36;
+  --text-primary: #e0e8e4;
+  --text-secondary: #7a9e8a;
+  --text-muted: #6e757d;
+  --text-hint: #4a6a58;
+  --accent: #c2410c;
+  --accent-hover: #d97706;
+  --accent-light: #e8692a;
+  --success-bg: #1e3a2a;
+  --success-text: #7dd3a8;
+  --warning-bg: #d97706;
+  --warning-text: #fef3c7;
+  --danger-bg: #3d2020;
+  --danger-text: #fca5a5;
+  --info-bg: #1e40af;
+  --info-text: #93c5fd;
+  --muted: #6e757d;
+  --navbar-bg: #1e2a24;
+  --navbar-border: #3a4a42;
+  --sidebar-bg: #1e2a24;
+}
+
+/* Dark mode map tile filter removed for light tiles */
+
+/* Government Portal specific variables */
+:root[data-role="admin"] {
+  --gov-sidebar: #1a2e24;
+  --gov-sidebar-text: #a3c4b0;
+  --gov-sidebar-active: #c2410c;
+  --gov-accent: #1d6b4a;
+  --gov-page-bg: #f4f6f5;
+}
+
+html.dark[data-role="admin"] {
+  --gov-page-bg: #181e1b;
+}
+
+html.dark [class*="text-gray-500"],
+html.dark [class*="text-gray-600"] {
+  color: #a89880 !important;
+}
+
+html.dark [class*="border-stone-200"],
+html.dark [class*="border-stone-100"],
+html.dark [class*="border-gray-200"] {
+  border-color: #4a4035 !important;
+}
+
+html.dark nav,
+html.dark header {
+  background-color: #26221e !important;
+  border-bottom-color: #4a4035 !important;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #2e2924 !important;
+  border-color: #4a4035 !important;
+  color: #e8e0d5 !important;
+}
+
+html.dark .shadow,
+html.dark .shadow-sm,
+html.dark .shadow-md {
+  box-shadow: 0 1px 8px rgba(0,0,0,0.4) !important;
+}

@@ -1,4 +1,5 @@
 import React from 'react'
+import { Outlet } from 'react-router-dom'
 import Navbar from '../Navbar'
 import { ToastContainer } from '../ui/Toast'
 
@@ -7,9 +8,9 @@ import { ToastContainer } from '../ui/Toast'
  * Provides consistent layout structure with navbar and main content area
  * Includes proper spacing, responsive design, and toast notifications
  */
-const Layout = ({ children, showNavbar = true }) => {
+const Layout = ({ showNavbar = true }) => {
   return (
-    <div className="min-h-screen bg-civic-parchment">
+    <div className="min-h-screen bg-[#f5f2ed] dark:bg-[#1e1a17] transition-colors duration-200">
       {/* Toast Notifications */}
       <ToastContainer />
       
@@ -18,8 +19,8 @@ const Layout = ({ children, showNavbar = true }) => {
       
       {/* Main Content */}
       <main className={showNavbar ? "pt-16" : ""}>
-        <div className="container">
-          {children}
+        <div className="container overflow-auto">
+          <Outlet />
         </div>
       </main>
     </div>

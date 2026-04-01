@@ -6,6 +6,7 @@ import { supabase } from '../services/supabase'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import { Search, X, ChevronLeft, ChevronRight, MapPin, ZoomIn, ZoomOut, Maximize2, Target, Filter, Calendar } from 'lucide-react'
 import L from 'leaflet'
+import toast from 'react-hot-toast'
 
 // Import Leaflet CSS
 import 'leaflet/dist/leaflet.css'
@@ -416,38 +417,45 @@ function HeatmapLayer({ reports, viewMode }) {
   return null
 }
 
+// Map controller component to get map instance
+const MapController = ({ onMapReady }) => {
+  const map = useMap()
+  useEffect(() => { onMapReady(map) }, [map])
+  return null
+}
+
 // Map control components
 function MapControls({ onMyLocation, onZoomIn, onZoomOut, onFullscreen }) {
   return (
     <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
       <button
         onClick={onMyLocation}
-        className="bg-white rounded-xl shadow-sm hover:shadow-md p-3 flex items-center gap-2 text-sm font-medium text-civic-textPrimary hover:text-civic-orange transition-all"
+        title="My Location"
+        className="w-10 h-10 flex items-center justify-center rounded-xl shadow-md transition-colors duration-150 bg-white border border-[#D4522A]/30 text-[#D4522A] hover:bg-[#F8F6F1] dark:bg-[#1C1C1A] dark:border-[#D4522A]/40 dark:text-[#D4522A] dark:hover:bg-[#2C2C2A]"
       >
         <MapPin className="w-4 h-4" />
-        My Location
       </button>
       
-      <div className="bg-white rounded-xl shadow-sm hover:shadow-md flex">
+      <div className="rounded-xl shadow-md flex bg-white border border-[#E8E4DC] text-[#1C1917] dark:bg-[#1C1C1A] dark:border-[#2C2C2A] dark:text-[#E8E4DC]">
         <button
           onClick={onZoomIn}
-          className="p-3 hover:bg-civic-parchment transition-colors rounded-l-xl"
+          className="w-10 h-10 flex items-center justify-center transition-colors duration-150 rounded-l-xl hover:bg-[#F8F6F1] dark:hover:bg-[#2C2C2A]"
         >
-          <ZoomIn className="w-4 h-4 text-civic-textPrimary" />
+          <ZoomIn className="w-4 h-4" />
         </button>
         <button
           onClick={onZoomOut}
-          className="p-3 hover:bg-civic-parchment transition-colors rounded-r-xl"
+          className="w-10 h-10 flex items-center justify-center transition-colors duration-150 rounded-r-xl border-l border-[#E8E4DC] dark:border-[#2C2C2A] hover:bg-[#F8F6F1] dark:hover:bg-[#2C2C2A]"
         >
-          <ZoomOut className="w-4 h-4 text-civic-textPrimary" />
+          <ZoomOut className="w-4 h-4" />
         </button>
       </div>
       
       <button
         onClick={onFullscreen}
-        className="bg-white rounded-xl shadow-sm hover:shadow-md p-3 hover:bg-civic-parchment transition-colors"
+        className="w-10 h-10 flex items-center justify-center rounded-xl shadow-md transition-colors duration-150 bg-white border border-[#E8E4DC] text-[#1C1917] hover:bg-[#F8F6F1] dark:bg-[#1C1C1A] dark:border-[#2C2C2A] dark:text-[#E8E4DC] dark:hover:bg-[#2C2C2A]"
       >
-        <Maximize2 className="w-4 h-4 text-civic-textPrimary" />
+        <Maximize2 className="w-4 h-4" />
       </button>
     </div>
   )
@@ -456,28 +464,28 @@ function MapControls({ onMyLocation, onZoomIn, onZoomOut, onFullscreen }) {
 // Legend component
 function MapLegend() {
   return (
-    <div className="absolute bottom-4 right-4 z-[1000] bg-white rounded-2xl p-4 shadow-md border border-civic-muted">
+    <div className="absolute bottom-4 right-4 z-[1000] rounded-2xl p-4 shadow-xl border bg-white border-[#E8E4DC] dark:bg-[#1C1C1A] dark:border-[#2C2C2A]">
       <div className="mb-3">
-        <h4 className="font-semibold text-civic-textPrimary text-sm mb-2">Heatmap Intensity</h4>
+        <h4 className="font-semibold text-sm mb-2 text-[#1C1917] dark:text-[#E8E4DC]">Heatmap Intensity</h4>
         <div className="flex items-center gap-2">
           <div className="w-2 h-4 rounded" style={{ backgroundColor: '#2A9D8F' }}></div>
           <div className="w-2 h-4 rounded" style={{ backgroundColor: '#E9A84C' }}></div>
           <div className="w-2 h-4 rounded" style={{ backgroundColor: '#D4522A' }}></div>
           <div className="w-2 h-4 rounded" style={{ backgroundColor: '#C1121F' }}></div>
         </div>
-        <div className="flex justify-between text-xs text-civic-textSecondary mt-1">
+        <div className="flex justify-between text-xs mt-1 text-[#6B6560]">
           <span>Low</span>
           <span>High</span>
         </div>
       </div>
       
       <div>
-        <h4 className="font-semibold text-civic-textPrimary text-sm mb-2">Categories</h4>
+        <h4 className="font-semibold text-sm mb-2 text-[#1C1917] dark:text-[#E8E4DC]">Categories</h4>
         <div className="space-y-1">
           {categories.slice(0, 4).map(category => (
             <div key={category.id} className="flex items-center gap-2 text-xs">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }}></div>
-              <span className="text-civic-textSecondary">{category.name}</span>
+              <span className="text-[#6B6560] dark:text-[#E8E4DC]">{category.name}</span>
             </div>
           ))}
         </div>
@@ -492,7 +500,7 @@ function IssueCount({ count }) {
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-civic-orange text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg"
+      className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-[#D4522A] text-white px-5 py-2 rounded-full text-sm font-medium shadow-lg"
     >
       Showing {count} issues
     </motion.div>
@@ -507,6 +515,7 @@ const MapView = () => {
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [selectedReport, setSelectedReport] = useState(null)
+  const [mapInstance, setMapInstance] = useState(null)
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('')
@@ -639,30 +648,49 @@ const MapView = () => {
 
   // Map control handlers
   const handleMyLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords
-          if (mapRef.current) {
-            mapRef.current.setView([latitude, longitude], 15)
-          }
-        },
-        (error) => {
-          console.error('Error getting location:', error)
-        }
-      )
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser')
+      return
     }
+    
+    toast.loading('Getting your location...', { id: 'location' })
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        // Pan and zoom map to user location
+        if (mapInstance) {
+          mapInstance.flyTo([latitude, longitude], 15, {
+            animate: true,
+            duration: 1.5
+          })
+        }
+        toast.success('Location found!', { id: 'location' })
+      },
+      (error) => {
+        let message = 'Unable to get location'
+        if (error.code === 1) message = 'Location access denied. Please allow location access.'
+        if (error.code === 2) message = 'Location unavailable'
+        if (error.code === 3) message = 'Location request timed out'
+        toast.error(message, { id: 'location' })
+      },
+      { 
+        enableHighAccuracy: true, 
+        timeout: 10000, 
+        maximumAge: 0 
+      }
+    )
   }
 
   const handleZoomIn = () => {
-    if (mapRef.current) {
-      mapRef.current.zoomIn()
+    if (mapInstance) {
+      mapInstance.zoomIn()
     }
   }
 
   const handleZoomOut = () => {
-    if (mapRef.current) {
-      mapRef.current.zoomOut()
+    if (mapInstance) {
+      mapInstance.zoomOut()
     }
   }
 
@@ -718,19 +746,23 @@ const MapView = () => {
   }
 
   return (
-    <div className="h-screen overflow-hidden relative">
+    <div className="relative" style={{ height: 'calc(100vh - 64px)', width: '100%' }}>
       {/* Map Container */}
-      <div className="absolute inset-0 top-16">
+      <div className="relative" style={{ height: '100%', width: '100%' }}>
         <MapContainer
           center={[19.0760, 72.8777]}
           zoom={12}
+          zoomControl={false}
           style={{ height: '100%', width: '100%' }}
           ref={mapRef}
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
+          
+          {/* Map Controller */}
+          <MapController onMapReady={setMapInstance} />
           
           {/* Heatmap Layer */}
           <HeatmapLayer reports={filteredReports} viewMode={viewMode} />
@@ -738,12 +770,24 @@ const MapView = () => {
           {/* Markers */}
           {viewMode === 'pins' || viewMode === 'both' ? (
             filteredReports.map(report => {
-              console.log('Creating marker for report:', {
-                id: report.id,
-                lat: report.latitude,
-                lng: report.longitude,
-                title: report.title
-              })
+              const categoryInfo = categories.find(c => c.id === report.ai_issue_type) || categories[0];
+              const deptIcon = categoryInfo.icon;
+              const deptColor = categoryInfo.color;
+              const deptColorLight = `${categoryInfo.color}20`;
+
+              const severityInfo = severities.find(s => s.id === report.ai_severity) || severities[0];
+              const severityStyle = { backgroundColor: `${severityInfo.color}20`, color: severityInfo.color };
+
+              const statusInfo = statuses.find(s => s.id === report.status) || statuses[0];
+              const statusStyle = { backgroundColor: `${statusInfo.color}20`, color: statusInfo.color };
+              
+              const timeAgo = (dateStr) => {
+                if (!dateStr) return '';
+                const diffHours = Math.floor((new Date() - new Date(dateStr)) / (1000 * 60 * 60));
+                if (diffHours < 24) return diffHours === 0 ? 'Just now' : `${diffHours} hours ago`;
+                const diffDays = Math.floor(diffHours / 24);
+                return diffDays === 1 ? '1 day ago' : `${diffDays} days ago`;
+              };
               
               return (
                 <Marker
@@ -760,31 +804,32 @@ const MapView = () => {
                   }}
                 >
                   <Popup>
-                    <div className="bg-white rounded-2xl p-4 shadow-xl min-w-[240px]">
+                    <div className="p-4">
+                      {/* Department badge */}
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full mb-2"
+                        style={{ backgroundColor: deptColorLight, color: deptColor }}>
+                        {deptIcon} {categoryInfo.name}
+                      </span>
+                      
+                      {/* Title */}
+                      <p className="font-semibold text-[#1C1917] text-sm leading-snug mb-2">{report.title}</p>
+                      
+                      {/* Severity + Status row */}
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="bg-civic-parchment px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                          {categories.find(c => c.id === report.ai_issue_type)?.icon} 
-                          {categories.find(c => c.id === report.ai_issue_type)?.name}
-                        </span>
-                        <span className={`w-2 h-2 rounded-full`} style={{ backgroundColor: severities.find(s => s.id === report.ai_severity)?.color }}></span>
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={severityStyle}>{severityInfo.name}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={statusStyle}>{statusInfo.name}</span>
                       </div>
                       
-                      <h3 className="font-semibold text-civic-textPrimary mb-2">{report.title}</h3>
+                      {/* Location */}
+                      <p className="text-xs text-[#6B6560] mb-1">📍 {report.address?.slice(0,40)}...</p>
                       
-                      <div className="text-sm text-civic-textSecondary mb-2">
-                        <div className="flex items-center gap-1 mb-1">
-                          <MapPin className="w-3 h-3" />
-                          <span className="line-clamp-1">{report.address}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span>Status:</span>
-                          <span className="font-medium">{statuses.find(s => s.id === report.status)?.name}</span>
-                        </div>
-                      </div>
+                      {/* Time */}
+                      <p className="text-xs text-[#6B6560] mb-3">{timeAgo(report.created_at)}</p>
                       
-                      <button
+                      {/* View button */}
+                      <button 
                         onClick={() => navigate(`/report/${report.id}`)}
-                        className="text-civic-orange font-medium text-sm hover:underline"
+                        className="w-full bg-[#D4522A] text-white text-xs font-medium py-2 rounded-xl hover:bg-[#B8441F] transition-colors"
                       >
                         View Full Report →
                       </button>
@@ -815,36 +860,36 @@ const MapView = () => {
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
-            initial={{ x: -300 }}
-            animate={{ x: 0 }}
-            exit={{ x: -300 }}
+            initial={{ width: 0 }}
+            animate={{ width: 300 }}
+            exit={{ width: 0 }}
             transition={{ type: 'spring', damping: 25 }}
-            className="absolute left-0 top-16 bottom-0 w-[300px] bg-white border-r border-civic-muted overflow-y-auto z-[999]"
+            className="absolute left-0 top-0 bottom-0 bg-white border-r border-[#E8E4DC] dark:bg-[#1C1C1A] dark:border-[#2C2C2A] overflow-y-auto z-[999]"
           >
-            <div className="p-6">
+            <div className="p-6" style={{ minWidth: '300px' }}>
               {/* Header */}
               <div className="mb-6">
-                <h2 className="text-lg font-semibold text-civic-textPrimary mb-1">Map Filters</h2>
-                <p className="text-sm text-civic-textSecondary">Showing {filteredReports.length} issues</p>
+                <h2 className="text-lg font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-1">Map Filters</h2>
+                <p className="text-sm text-[#6B6560]">Showing {filteredReports.length} issues</p>
               </div>
 
               {/* Search */}
-              <div className="mb-6">
+              <div className="mb-6 bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-civic-textSecondary" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B6560]" />
                   <input
                     type="text"
                     placeholder="Search location or title..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 bg-civic-parchment rounded-lg border border-civic-muted focus:outline-none focus:ring-2 focus:ring-civic-orange/20"
+                    className="w-full pl-10 pr-4 py-2 text-sm rounded-xl bg-white border border-[#E8E4DC] text-[#1C1917] dark:bg-[#111110] dark:border-[#2C2C2A] dark:text-[#E8E4DC] focus:outline-none focus:ring-2 focus:ring-[#D4522A]/20"
                   />
                 </div>
               </div>
 
               {/* Category Filter */}
-              <div className="mb-6">
-                <h3 className="font-medium text-civic-textPrimary mb-3">Categories</h3>
+              <div className="mb-6 bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
+                <h3 className="font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-3">Categories</h3>
                 <div className="space-y-2">
                   {categoryCounts.map(category => (
                     <label key={category.id} className="flex items-center gap-2 cursor-pointer">
@@ -852,26 +897,26 @@ const MapView = () => {
                         type="checkbox"
                         checked={selectedCategories.includes(category.id)}
                         onChange={() => toggleCategory(category.id)}
-                        className="rounded border-civic-muted text-civic-orange focus:ring-civic-orange"
+                        className="rounded border-[#E8E4DC] dark:border-[#2C2C2A] text-[#D4522A] focus:ring-[#D4522A]"
                       />
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }}></div>
-                      <span className="text-sm text-civic-textPrimary">{category.name}</span>
-                      <span className="text-xs text-civic-textSecondary bg-civic-parchment px-1.5 py-0.5 rounded-full">
+                      <span className="text-sm text-[#1C1917] dark:text-[#E8E4DC]">{category.name}</span>
+                      <span className="text-xs text-[#6B6560] bg-white border border-[#E8E4DC] dark:bg-[#2C2C2A] dark:border-[#2C2C2A] px-1.5 py-0.5 rounded-full ml-auto">
                         {category.count}
                       </span>
                     </label>
                   ))}
                 </div>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-4 flex gap-3">
                   <button
                     onClick={() => setSelectedCategories(categories.map(c => c.id))}
-                    className="text-xs text-civic-orange hover:underline"
+                    className="text-xs text-[#D4522A] hover:text-[#B8441F] font-medium transition-colors"
                   >
                     Select All
                   </button>
                   <button
                     onClick={() => setSelectedCategories([])}
-                    className="text-xs text-civic-orange hover:underline"
+                    className="text-xs text-[#D4522A] hover:text-[#B8441F] font-medium transition-colors"
                   >
                     Deselect All
                   </button>
@@ -879,106 +924,106 @@ const MapView = () => {
               </div>
 
               {/* Severity Filter */}
-              <div className="mb-6">
-                <h3 className="font-medium text-civic-textPrimary mb-3">Severity</h3>
+              <div className="mb-6 bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
+                <h3 className="font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-3">Severity</h3>
                 <div className="flex flex-wrap gap-2">
-                  {severities.map(severity => (
-                    <button
-                      key={severity.id}
-                      onClick={() => toggleSeverity(severity.id)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                        selectedSeverities.includes(severity.id)
-                          ? 'text-white'
-                          : 'bg-civic-parchment text-civic-textSecondary hover:text-civic-textPrimary'
-                      }`}
-                      style={{
-                        backgroundColor: selectedSeverities.includes(severity.id) ? severity.color : undefined
-                      }}
-                    >
-                      {severity.name}
-                    </button>
-                  ))}
+                  {severities.map(severity => {
+                    const isActive = selectedSeverities.includes(severity.id);
+                    return (
+                      <button
+                        key={severity.id}
+                        onClick={() => toggleSeverity(severity.id)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
+                          isActive
+                            ? 'bg-[#D4522A] text-white border-[#D4522A]'
+                            : 'bg-white text-[#6B6560] border-[#E8E4DC] dark:bg-[#2C2C2A] dark:border-[#2C2C2A] dark:text-[#6B6560]'
+                        }`}
+                      >
+                        {severity.name}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
               {/* Status Filter */}
-              <div className="mb-6">
-                <h3 className="font-medium text-civic-textPrimary mb-3">Status</h3>
+              <div className="mb-6 bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
+                <h3 className="font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-3">Status</h3>
                 <div className="flex flex-wrap gap-2">
-                  {statuses.map(status => (
-                    <button
-                      key={status.id}
-                      onClick={() => toggleStatus(status.id)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                        selectedStatuses.includes(status.id)
-                          ? 'text-white'
-                          : 'bg-civic-parchment text-civic-textSecondary hover:text-civic-textPrimary'
-                      }`}
-                      style={{
-                        backgroundColor: selectedStatuses.includes(status.id) ? status.color : undefined
-                      }}
-                    >
-                      {status.name}
-                    </button>
-                  ))}
+                  {statuses.map(status => {
+                    const isActive = selectedStatuses.includes(status.id);
+                    return (
+                      <button
+                        key={status.id}
+                        onClick={() => toggleStatus(status.id)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
+                          isActive
+                            ? 'bg-[#D4522A] text-white border-[#D4522A]'
+                            : 'bg-white text-[#6B6560] border-[#E8E4DC] dark:bg-[#2C2C2A] dark:border-[#2C2C2A] dark:text-[#6B6560]'
+                        }`}
+                      >
+                        {status.name}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
               {/* Date Range */}
-              <div className="mb-6">
-                <h3 className="font-medium text-civic-textPrimary mb-3">Date Range</h3>
-                <div className="space-y-2">
+              <div className="mb-6 bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
+                <h3 className="font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-3">Date Range</h3>
+                <div className="space-y-3">
                   <div>
-                    <label className="text-xs text-civic-textSecondary">From</label>
+                    <label className="text-sm text-[#6B6560] block mb-1">From</label>
                     <input
                       type="date"
                       value={dateFrom}
                       onChange={(e) => setDateFrom(e.target.value)}
-                      className="w-full px-3 py-2 bg-civic-parchment rounded-lg border border-civic-muted focus:outline-none focus:ring-2 focus:ring-civic-orange/20"
+                      className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-[#E8E4DC] text-[#1C1917] dark:bg-[#111110] dark:border-[#2C2C2A] dark:text-[#E8E4DC] dark:[&::-webkit-calendar-picker-indicator]:invert focus:outline-none focus:ring-2 focus:ring-[#D4522A]/20"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-civic-textSecondary">To</label>
+                    <label className="text-sm text-[#6B6560] block mb-1">To</label>
                     <input
                       type="date"
                       value={dateTo}
                       onChange={(e) => setDateTo(e.target.value)}
-                      className="w-full px-3 py-2 bg-civic-parchment rounded-lg border border-civic-muted focus:outline-none focus:ring-2 focus:ring-civic-orange/20"
+                      className="w-full px-3 py-2 text-sm rounded-xl bg-white border border-[#E8E4DC] text-[#1C1917] dark:bg-[#111110] dark:border-[#2C2C2A] dark:text-[#E8E4DC] dark:[&::-webkit-calendar-picker-indicator]:invert focus:outline-none focus:ring-2 focus:ring-[#D4522A]/20"
                     />
                   </div>
                 </div>
               </div>
 
               {/* View Mode */}
-              <div className="mb-6">
-                <h3 className="font-medium text-civic-textPrimary mb-3">View Mode</h3>
+              <div className="mb-6 bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
+                <h3 className="font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-3">View Mode</h3>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setViewMode('heatmap')}
-                    className={`flex-1 px-3 py-2 rounded-full text-xs font-medium transition-colors ${
+                    className={`flex-1 px-3 py-2 rounded-xl border text-xs font-medium transition-colors ${
                       viewMode === 'heatmap' 
-                        ? 'bg-civic-orange text-white' 
-                        : 'bg-civic-parchment text-civic-textSecondary hover:text-civic-textPrimary'
+                        ? 'bg-[#D4522A] text-white border-[#D4522A]' 
+                        : 'bg-white text-[#6B6560] border-[#E8E4DC] dark:bg-[#2C2C2A] dark:border-[#2C2C2A] dark:text-[#6B6560]'
                     }`}
                   >
                     🔥 Heatmap
                   </button>
                   <button
                     onClick={() => setViewMode('pins')}
-                    className={`flex-1 px-3 py-2 rounded-full text-xs font-medium transition-colors ${
+                    className={`flex-1 px-3 py-2 rounded-xl border text-xs font-medium transition-colors ${
                       viewMode === 'pins' 
-                        ? 'bg-civic-orange text-white' 
-                        : 'bg-civic-parchment text-civic-textSecondary hover:text-civic-textPrimary'
+                        ? 'bg-[#D4522A] text-white border-[#D4522A]' 
+                        : 'bg-white text-[#6B6560] border-[#E8E4DC] dark:bg-[#2C2C2A] dark:border-[#2C2C2A] dark:text-[#6B6560]'
                     }`}
                   >
                     📍 Pins
                   </button>
                   <button
                     onClick={() => setViewMode('both')}
-                    className={`flex-1 px-3 py-2 rounded-full text-xs font-medium transition-colors ${
+                    className={`flex-1 px-3 py-2 rounded-xl border text-xs font-medium transition-colors ${
                       viewMode === 'both' 
-                        ? 'bg-civic-orange text-white' 
-                        : 'bg-civic-parchment text-civic-textSecondary hover:text-civic-textPrimary'
+                        ? 'bg-[#D4522A] text-white border-[#D4522A]' 
+                        : 'bg-white text-[#6B6560] border-[#E8E4DC] dark:bg-[#2C2C2A] dark:border-[#2C2C2A] dark:text-[#6B6560]'
                     }`}
                   >
                     🔀 Both
@@ -989,24 +1034,24 @@ const MapView = () => {
               {/* Reset Filters */}
               <button
                 onClick={resetFilters}
-                className="w-full px-4 py-2 text-civic-orange font-medium text-sm hover:bg-civic-parchment rounded-lg transition-colors"
+                className="w-full px-4 py-2 text-[#D4522A] hover:text-[#B8441F] font-medium text-sm rounded-xl transition-colors mb-6 pb-2"
               >
                 Reset All Filters
               </button>
 
               {/* Stats Cards */}
-              <div className="mt-6 space-y-3">
-                <div className="bg-civic-parchment rounded-xl p-3">
-                  <div className="text-2xl font-bold text-civic-textPrimary">{stats.total}</div>
-                  <div className="text-xs text-civic-textSecondary">Total Issues</div>
+              <div className="space-y-3">
+                <div className="bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
+                  <div className="text-2xl font-bold text-[#1C1917] dark:text-[#E8E4DC]">{stats.total}</div>
+                  <div className="text-xs text-[#6B6560]">Total Issues</div>
                 </div>
-                <div className="bg-civic-parchment rounded-xl p-3">
+                <div className="bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
                   <div className="text-2xl font-bold text-red-600">{stats.critical}</div>
-                  <div className="text-xs text-civic-textSecondary">Critical Issues</div>
+                  <div className="text-xs text-[#6B6560]">Critical Issues</div>
                 </div>
-                <div className="bg-civic-parchment rounded-xl p-3">
+                <div className="bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
                   <div className="text-2xl font-bold text-green-600">{stats.resolvedToday}</div>
-                  <div className="text-xs text-civic-textSecondary">Resolved Today</div>
+                  <div className="text-xs text-[#6B6560]">Resolved Today</div>
                 </div>
               </div>
             </div>
@@ -1017,7 +1062,11 @@ const MapView = () => {
       {/* Sidebar Toggle */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="absolute left-0 top-20 z-[1000] bg-civic-orange text-white p-2 rounded-r-lg shadow-lg hover:bg-civic-orange/90 transition-colors"
+        className="absolute top-1/2 z-[1001] bg-white dark:bg-[#1C1C1A] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-full w-8 h-8 flex items-center justify-center shadow-md cursor-pointer transition-all duration-150 hover:shadow-lg"
+        style={{ 
+          left: sidebarOpen ? '284px' : '0px',
+          transform: 'translateY(-50%)'
+        }}
       >
         {sidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       </button>

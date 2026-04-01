@@ -6,6 +6,9 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+// Import notifications router
+const notificationsRouter = require('./notifications');
+
 /**
  * Transcription API using OpenAI Whisper
  * Provides speech-to-text functionality for the Civic Sutra application
@@ -17,6 +20,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Mount notifications router
+app.use('/api/notifications', notificationsRouter);
 
 // Configure multer for audio file uploads
 const storage = multer.memoryStorage();

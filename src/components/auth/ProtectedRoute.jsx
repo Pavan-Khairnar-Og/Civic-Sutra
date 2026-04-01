@@ -89,7 +89,7 @@ const ProtectedRoute = ({
 export const AdminRoute = ({ children }) => {
   return (
     <ProtectedRoute 
-      allowedRoles={['government']}
+      allowedRoles={['government', 'gov']}
       requireAuth={true}
     >
       {children}
