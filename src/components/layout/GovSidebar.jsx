@@ -45,12 +45,12 @@ const GovSidebar = () => {
     <aside className="w-[240px] bg-[#1a2e24] flex flex-col h-full text-white/90">
       {/* Sidebar Header */}
       <div className="p-6">
-        <div className="flex items-center gap-3 mb-1">
+        <Link to="/" className="flex items-center gap-3 mb-1 hover:bg-white/5 rounded-lg p-2 -m-2 transition-colors">
           <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
             <ShieldCheck className="text-[#DA532D]" size={20} />
           </div>
           <span className="font-bold text-lg tracking-tight">CivicSutra</span>
-        </div>
+        </Link>
         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest pl-11">Government Portal</p>
       </div>
 
