@@ -13,7 +13,7 @@ const GovIssueDetail = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isGov, user: govUser } = useAuth();
+  const { user } = useAuth();
   const [issue, setIssue] = useState(null);
   const [loading, setLoading] = useState(true);
   const [internalNotes, setInternalNotes] = useState([]);
@@ -71,13 +71,13 @@ const GovIssueDetail = () => {
     try {
       setSubmittingNote(true);
       const { error } = await supabase
-        .from('internal_notes')
-        .insert({
-          issue_id: id,
-          admin_id: govUser.id,
-          note_text: newNote,
-          admin_name: govUser.name
-        });
+          .from('internal_notes')
+          .insert({
+            issue_id: id,
+            admin_id: user.id,
+            note_text: newNote,
+            admin_name: user.name
+          });
       
       if (error) throw error;
       setNewNote('');

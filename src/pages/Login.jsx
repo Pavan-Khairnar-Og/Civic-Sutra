@@ -137,7 +137,7 @@ const Login = () => {
       if (error) {
         console.error('Supabase auth error:', error);
         if (error.message.includes('Invalid login credentials')) {
-          setAuthError('Incorrect email or password. Please register a new government account first.');
+          setAuthError('Incorrect email or password.');
         } else if (error.message.includes('Email not confirmed')) {
           setAuthError('Please verify your email before logging in.');
         } else if (error.message.includes('Too many requests')) {
@@ -153,83 +153,17 @@ const Login = () => {
         return;
       }
 
-      // Check government access with robust logic
-      const checkGovernmentAccess = async (user) => {
-        // Check 1: user metadata (most reliable, set at signup)
-        const meta = user.user_metadata || {};
-        console.log("User metadata:", meta);
-        
-        if (meta.user_type === 'government' || meta.role === 'government') {
-          return { 
-            isGov: true, 
-            department: meta.department 
-          };
-        }
-
-        // Check 2: profiles table — check BOTH role and user_type columns
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role, user_type, department')
-            .eq('id', user.id)
-            .maybeSingle();
-
-          console.log("Profile found:", profile);
-
-          if (
-            profile?.role === 'government' || 
-            profile?.role === 'admin' ||
-            profile?.user_type === 'government'
-          ) {
-            return { 
-              isGov: true, 
-              department: profile.department 
-            };
-          }
-        } catch (e) {
-          console.warn("Profile check failed:", e.message);
-        }
-
-        return { isGov: false, department: null };
-      };
-
-      const access = await checkGovernmentAccess(data.user);
-      if (activeTab === 'government' && !access.isGov) {
-        await supabase.auth.signOut();
-        setAuthError('This account does not have government access. Please register as a government employee.');
-        return;
-      }
-
-      // Skip email confirmation check for development
-      // Users can login immediately after registration
-
-      // Try to get profile data, but don't fail if RLS blocks it
-      let profile = null;
-      try {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('role, department')
-          .eq('id', data.user.id)
-          .single();
-        profile = profileData;
-      } catch (profileErr) {
-        console.log('Profile access blocked by RLS, using user metadata instead');
-      }
-
-      // Use profile data if available, otherwise use user metadata
-      const department = profile?.department || access.department;
-
-      // Update user data with government info
+      // Simplified user data - no role checking
       const userData = {
         name: data.user.user_metadata?.full_name || data.user.email.split('@')[0],
         email: data.user.email,
-        role: 'gov',
-        department: department
+        role: activeTab === 'government' ? 'gov' : 'citizen',
+        department: formData.department || ''
       };
 
-      console.log('Government login successful, userData:', userData);
+      console.log('Login successful, userData:', userData);
       login(userData);
-      navigate('/dashboard');
+      navigate('/home');
     } catch (err) {
       console.error('Login error:', err);
       setAuthError('Something went wrong. Please try again.');
@@ -308,12 +242,12 @@ const Login = () => {
       setRegSuccess(true);
       setTimeout(() => {
         setRegSuccess(false);
-        setAuthSuccess('Government account created! Please sign in.');
+        setAuthSuccess('Account created! Please sign in.');
         setIsSignUp(false);
         setLoading(false);
       }, 1000);
     } catch (err) {
-      setRegError(err.message || 'Failed to create government account. Please try again.');
+      setRegError(err.message || 'Failed to create account. Please try again.');
       setLoading(false);
     }
   };
@@ -401,12 +335,12 @@ const Login = () => {
       setRegError(null);
       setTimeout(() => {
         setRegSuccess(false);
-        setAuthError('Government account created successfully! You can now sign in with your credentials.');
+        setAuthError('Account created successfully! You can now sign in with your credentials.');
       }, 3000);
 
     } catch (err) {
       console.error('Registration error:', err);
-      setRegError(err.message || 'Failed to create government account. Please try again.');
+      setRegError(err.message || 'Failed to create account. Please try again.');
     } finally {
       setRegLoading(false);
     }

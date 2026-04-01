@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
   }, [])
 
   const login = (userData) => {
-    // Store additional user data in localStorage for role-based UI
+    // Store user data in localStorage
     const userWithRole = {
       ...userData,
       role: userData.role || 'citizen'
@@ -56,8 +56,8 @@ export const AuthProvider = ({ children }) => {
 
   // Computed values
   const isAuthenticated = !!user
-  const isGov = user?.role === 'gov' || user?.role === 'government'
-  const isAnonymous = !user || user?.role === 'anonymous'
+  const isGov = false // Simplified - no role checking
+  const isAnonymous = !user
 
   const value = {
     user,
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
  */
 export const withAuth = (Component, allowedRoles = []) => {
   return function ProtectedComponent(props) {
-    const { isAuthenticated, isGov, isAnonymous, loading } = useAuth()
+    const { isAuthenticated, loading } = useAuth()
     
     if (loading) {
       return (
@@ -99,11 +99,7 @@ export const withAuth = (Component, allowedRoles = []) => {
       return <Navigate to="/" replace />
     }
 
-    // If government role required and user is not gov, redirect to home
-    if (allowedRoles.includes('gov') && !isGov) {
-      return <Navigate to="/home" replace />
-    }
-
+    // Simplified - no role checking, all authenticated users have access
     return <Component {...props} />
   }
 }
