@@ -334,11 +334,11 @@ const Login = () => {
 
       console.log('Auth data:', authData);
 
-      // Step 2: Try to create profile record (may fail due to RLS, but that's ok)
+      // Step 2: Try to create/update profile record (use upsert to avoid conflicts)
       try {
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert({
+          .upsert({
             id: authData.user.id,
             email: formData.email,
             full_name: formData.fullName,
@@ -346,14 +346,14 @@ const Login = () => {
             department: formData.department,
             phone: formData.phone,
             created_at: new Date().toISOString()
-          });
+          }, { onConflict: 'id' }); // Specify id as the conflict column
         
-        // If profile insertion fails, it's likely due to RLS - the user metadata should be sufficient
+        // If profile upsert fails, it's likely due to RLS - the user metadata should be sufficient
         if (profileError) {
-          console.log('Profile insertion failed (likely due to RLS), but user metadata contains the info:', profileError);
+          console.log('Profile upsert failed (likely due to RLS), but user metadata contains the info:', profileError);
         }
       } catch (profileErr) {
-        console.log('Profile insertion failed (likely due to RLS), but user metadata contains the info:', profileErr);
+        console.log('Profile upsert failed (likely due to RLS), but user metadata contains the info:', profileErr);
       }
 
       // Success - account created with government role in user metadata
