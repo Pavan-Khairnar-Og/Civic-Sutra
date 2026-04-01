@@ -414,6 +414,7 @@ const GovernmentDashboard = () => {
                   key={report.id} 
                   report={report} 
                   onStatusUpdate={updateIssueStatus}
+                  navigate={navigate}
                 />
               ))}
             </tbody>
@@ -438,7 +439,7 @@ const MetricCard = ({ title, value, icon, trend, color = "text-gray-900" }) => (
   </div>
 );
 
-const IssueRow = ({ report, onStatusUpdate }) => {
+const IssueRow = ({ report, onStatusUpdate, navigate }) => {
   // Fix 1: Capped priority score calculation
   const calculatePriority = (issue) => {
     const severityScore = {
