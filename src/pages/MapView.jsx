@@ -254,12 +254,57 @@ const categories = [
   { id: 'sanitation_waste', name: 'Sanitation & Waste', icon: '🗑️', color: '#4A4E69' },
   { id: 'parks_gardens', name: 'Parks & Gardens', icon: '🌳', color: '#2A9D8F' },
   { id: 'public_safety', name: 'Public Safety', icon: '🚨', color: '#C1121F' },
-  { id: 'municipal_administration', name: 'Municipal Administration', icon: '🏢', color: '#6B6560' },
-  // AI-generated categories that don't match our standard ones
-  { id: 'garbage', name: 'Sanitation & Waste', icon: '🗑️', color: '#4A4E69' },
-  { id: 'road_damage', name: 'Roads & Footpaths', icon: '🚧', color: '#6B4226' },
-  { id: 'water_leak OR flooding', name: 'Water Supply', icon: '💧', color: '#0077B6' }
+  { id: 'municipal_administration', name: 'Municipal Administration', icon: '🏢', color: '#6B6560' }
 ]
+
+// Function to map AI department names to standard categories
+const mapAIDepartmentToCategory = (aiDepartment) => {
+  const mapping = {
+    // Water related issues
+    'water_leak OR flooding': 'water_supply',
+    'flood': 'water_supply',
+    'water_leak': 'water_supply',
+    'flooding': 'water_supply',
+    'water': 'water_supply',
+    
+    // Road related issues
+    'road_damage': 'roads_footpaths',
+    'pothole': 'roads_footpaths',
+    'road': 'roads_footpaths',
+    'footpath': 'roads_footpaths',
+    
+    // Waste related issues
+    'garbage': 'sanitation_waste',
+    'trash': 'sanitation_waste',
+    'waste': 'sanitation_waste',
+    'dustbin': 'sanitation_waste',
+    
+    // Direct matches (case-insensitive)
+    'water supply': 'water_supply',
+    'roads & footpaths': 'roads_footpaths',
+    'street lighting': 'street_lighting',
+    'sanitation & waste': 'sanitation_waste',
+    'parks & gardens': 'parks_gardens',
+    'public safety': 'public_safety',
+    'municipal administration': 'municipal_administration'
+  }
+  
+  // Try exact match first (case-insensitive)
+  const lowerDept = aiDepartment.toLowerCase()
+  if (mapping[lowerDept]) {
+    return mapping[lowerDept]
+  }
+  
+  // Try partial matches
+  for (const [key, value] of Object.entries(mapping)) {
+    if (lowerDept.includes(key) || key.includes(lowerDept)) {
+      return value
+    }
+  }
+  
+  // Default fallback
+  return 'municipal_administration'
+}
 
 const severities = [
   { id: 'critical', name: 'Critical', color: '#DC2626' },
@@ -730,14 +775,14 @@ const MapView = () => {
         }
       }
       
-      // Category filter - use AI department instead of issue type
+      // Category filter - use mapped AI department
       if (selectedCategories.length > 0) {
         const aiDepartment = report.ai_department || report.assigned_department || report.ai_issue_type;
-        const reportCategoryKey = mapCategoryToTranslationKey(aiDepartment);
-        const categoryMatch = selectedCategories.includes(aiDepartment) || selectedCategories.includes(reportCategoryKey)
+        const mappedCategoryId = mapAIDepartmentToCategory(aiDepartment);
+        const categoryMatch = selectedCategories.includes(mappedCategoryId)
         if (!categoryMatch) {
           passedAllFilters = false
-          filterReasons.push(`Category "${aiDepartment}" not in selected: ${selectedCategories.join(', ')}`)
+          filterReasons.push(`Category "${mappedCategoryId}" not in selected: ${selectedCategories.join(', ')}`)
         }
       }
       
@@ -801,9 +846,8 @@ const MapView = () => {
       ...category,
       count: filteredReports.filter(r => {
         const aiDepartment = r.ai_department || r.assigned_department || r.ai_issue_type;
-        return aiDepartment === category.id || 
-               aiDepartment === category.name ||
-               mapCategoryToTranslationKey(aiDepartment) === category.id
+        const mappedCategoryId = mapAIDepartmentToCategory(aiDepartment);
+        return mappedCategoryId === category.id;
       }).length
     }))
   }, [filteredReports])
@@ -949,23 +993,20 @@ const MapView = () => {
           {/* Markers */}
           {viewMode === 'pins' || viewMode === 'both' ? (
             filteredReports.map(report => {
-              // Use AI-assigned department instead of issue type
+              // Map AI department to standard category
               const aiDepartment = report.ai_department || report.assigned_department || report.ai_issue_type || 'Other';
+              const mappedCategoryId = mapAIDepartmentToCategory(aiDepartment);
+              const categoryInfo = categories.find(c => c.id === mappedCategoryId) || categories[0];
+              
               console.log(`🗺️ MARKER DEBUG for Report ${report.id}:`, {
                 ai_department: report.ai_department,
                 assigned_department: report.assigned_department,
                 ai_issue_type: report.ai_issue_type,
-                final_department: aiDepartment
+                original_department: aiDepartment,
+                mapped_category_id: mappedCategoryId,
+                final_category: categoryInfo.name
               });
               
-              // Handle both old format ("Water Supply") and new format ("water_supply")
-              const categoryKey = mapCategoryToTranslationKey(aiDepartment);
-              const categoryInfo = categories.find(c => c.id === aiDepartment || c.id === categoryKey || c.name === aiDepartment) || categories[0];
-              console.log(`📋 CATEGORY INFO for ${aiDepartment}:`, {
-                categoryKey,
-                foundCategory: categoryInfo,
-                categoryName: categoryInfo.name
-              });
               const deptIcon = categoryInfo.icon;
               const deptColor = categoryInfo.color;
               const deptColorLight = `${categoryInfo.color}20`;
@@ -1083,61 +1124,68 @@ const MapView = () => {
               </div>
 
               {/* Category Filter */}
-              <div className="mb-6 bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
-                <h3 className="font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-3">{t('map.filterByCategory')}</h3>
+              <div className="mb-6 bg-white dark:bg-[#1C1C1A] border border-gray-200 dark:border-gray-700 rounded-2xl p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-gray-900 dark:text-white text-base">Filter by Category</h3>
+                  <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <span>{filteredReports.length} reports</span>
+                  </div>
+                </div>
                 <div className="space-y-2">
                   {categoryCounts.map(category => (
-                    <label key={category.id} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(category.id)}
-                        onChange={() => toggleCategory(category.id)}
-                        className="rounded border-[#E8E4DC] dark:border-[#2C2C2A] text-[#D4522A] focus:ring-[#D4522A]"
-                      />
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: category.color }}></div>
-                      <span className="text-sm text-[#1C1917] dark:text-[#E8E4DC]">{getCategoryTranslation(category.id, t)}</span>
-                      <span className="text-xs text-[#6B6560] bg-white border border-[#E8E4DC] dark:bg-[#2C2C2A] dark:border-[#2C2C2A] px-1.5 py-0.5 rounded-full ml-auto">
-                        {category.count}
-                      </span>
+                    <label 
+                      key={category.id} 
+                      className="group flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
+                    >
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          checked={selectedCategories.includes(category.id)}
+                          onChange={() => toggleCategory(category.id)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-5 h-5 rounded-md border-2 border-gray-300 dark:border-gray-600 peer-checked:border-[#D4522A] peer-checked:bg-[#D4522A] transition-all duration-200 flex items-center justify-center">
+                          <svg className="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-200" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-medium shadow-sm"
+                          style={{ backgroundColor: `${category.color}15`, color: category.color }}>
+                          {category.icon}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-[#D4522A] transition-colors">
+                            {getCategoryTranslation(category.id, t)}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            {category.count} {category.count === 1 ? 'report' : 'reports'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {category.count}
+                        </span>
+                      </div>
                     </label>
                   ))}
                 </div>
-                <div className="mt-4 flex gap-3">
+                <div className="mt-5 pt-4 border-t border-gray-200 dark:border-gray-700 flex gap-2">
                   <button
                     onClick={() => setSelectedCategories(categories.map(c => c.id))}
-                    className="text-xs text-[#D4522A] hover:text-[#B8441F] font-medium transition-colors"
+                    className="flex-1 text-xs font-medium text-[#D4522A] bg-[#D4522A]10 hover:bg-[#D4522A]20 px-3 py-2 rounded-lg transition-colors duration-200"
                   >
-                    {t('mapLabels.select_all')}
+                    Select All
                   </button>
                   <button
                     onClick={() => setSelectedCategories([])}
-                    className="text-xs text-[#D4522A] hover:text-[#B8441F] font-medium transition-colors"
+                    className="flex-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors duration-200"
                   >
-                    {t('mapLabels.deselect_all')}
+                    Clear All
                   </button>
-                </div>
-              </div>
-
-              {/* Severity Filter */}
-              <div className="mb-6 bg-[#F8F6F1] dark:bg-[#111110] border border-[#E8E4DC] dark:border-[#2C2C2A] rounded-xl p-4">
-                <h3 className="font-semibold text-[#1C1917] dark:text-[#E8E4DC] mb-3">{t('issue.severity')}</h3>
-                <div className="flex flex-wrap gap-2">
-                  {severities.map(severity => {
-                    const isActive = selectedSeverities.includes(severity.id);
-                    return (
-                      <button
-                        key={severity.id}
-                        onClick={() => toggleSeverity(severity.id)}
-                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${
-                          isActive
-                            ? 'bg-[#D4522A] text-white border-[#D4522A]'
-                            : 'bg-white text-[#6B6560] border-[#E8E4DC] dark:bg-[#2C2C2A] dark:border-[#2C2C2A] dark:text-[#6B6560]'
-                        }`}
-                      >
-                        {getSeverityTranslation(severity.id, t)}
-                      </button>
-                    )
-                  })}
                 </div>
               </div>
 
