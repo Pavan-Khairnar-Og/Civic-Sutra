@@ -8,7 +8,7 @@ export const getProfile = async (userId) => {
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .select()
+    .maybeSingle()  // ← Fixed: use maybeSingle() instead of single()
   
   console.log('Profile query result:', { data, error })
   
@@ -70,7 +70,7 @@ export const getProfileByUsername = async (username) => {
     .from('profiles')
     .select('id, username, full_name, city, role, created_at')
     .eq('username', username.toLowerCase())
-    .single()
+    .maybeSingle()  // ← Fixed: use maybeSingle() instead of single()
   
   if (error) throw error
   return data
