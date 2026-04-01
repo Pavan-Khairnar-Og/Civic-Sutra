@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../services/supabase'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
@@ -16,6 +17,7 @@ import { MapPin, Calendar, User, AlertTriangle, Clock, CheckCircle, TrendingUp, 
  * Only accessible to government users and admins
  */
 const GovernmentDashboard = () => {
+  const { t } = useTranslation()
   const { isGov } = useAuth()
   const navigate = useNavigate()
   const [reports, setReports] = useState([])
@@ -41,30 +43,30 @@ const GovernmentDashboard = () => {
 
   // Department categories
   const departments = [
-    { id: 'all', name: 'All Departments', icon: '🏛️' },
-    { id: 'sanitation', name: 'Sanitation', icon: '🗑️' },
-    { id: 'water', name: 'Water Supply', icon: '💧' },
-    { id: 'electricity', name: 'Electricity', icon: '⚡' },
-    { id: 'public_works', name: 'Public Works', icon: '🚧' },
-    { id: 'health', name: 'Health', icon: '🏥' },
-    { id: 'education', name: 'Education', icon: '🎓' },
-    { id: 'transport', name: 'Transport', icon: '🚌' }
+    { id: 'all', name: t('dashboard.allIssues'), icon: '🏛️' },
+    { id: 'sanitation', name: t('reportForm.sanitationWaste'), icon: '🗑️' },
+    { id: 'water', name: t('reportForm.waterSupply'), icon: '💧' },
+    { id: 'electricity', name: t('reportForm.streetLighting'), icon: '⚡' },
+    { id: 'public_works', name: t('reportForm.roadsFootpaths'), icon: '🚧' },
+    { id: 'health', name: t('reportForm.parksGardens'), icon: '🏥' },
+    { id: 'education', name: t('reportForm.publicSafety'), icon: '🎓' },
+    { id: 'transport', name: t('reportForm.municipalAdmin'), icon: '🚌' }
   ]
 
   // Priority levels
   const priorities = [
-    { id: 'critical', name: 'Critical', color: 'bg-red-500' },
-    { id: 'high', name: 'High', color: 'bg-orange-500' },
-    { id: 'medium', name: 'Medium', color: 'bg-yellow-500' },
-    { id: 'low', name: 'Low', color: 'bg-green-500' }
+    { id: 'critical', name: t('reportForm.critical'), color: 'bg-red-500' },
+    { id: 'high', name: t('reportForm.high'), color: 'bg-orange-500' },
+    { id: 'medium', name: t('reportForm.medium'), color: 'bg-yellow-500' },
+    { id: 'low', name: t('reportForm.low'), color: 'bg-green-500' }
   ]
 
   // Status options
   const statuses = [
-    { id: 'Pending', name: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
-    { id: 'Under Review', name: 'Under Review', color: 'bg-blue-100 text-blue-800' },
-    { id: 'In Progress', name: 'In Progress', color: 'bg-orange-100 text-orange-800' },
-    { id: 'Resolved', name: 'Resolved', color: 'bg-green-100 text-green-800' }
+    { id: 'Pending', name: t('status.pending'), color: 'bg-yellow-100 text-yellow-800' },
+    { id: 'Under Review', name: t('status.underReview'), color: 'bg-blue-100 text-blue-800' },
+    { id: 'In Progress', name: t('status.inProgress'), color: 'bg-orange-100 text-orange-800' },
+    { id: 'Resolved', name: t('status.resolved'), color: 'bg-green-100 text-green-800' }
   ]
 
   /**

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { 
   ArrowLeft, Clock, MapPin, User, FileText, 
   MessageSquare, CheckCircle, AlertTriangle, 
@@ -9,6 +10,7 @@ import {
 } from 'lucide-react';
 
 const GovIssueDetail = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { isGov, user: govUser } = useAuth();
@@ -99,7 +101,7 @@ const GovIssueDetail = () => {
           className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft size={18} />
-          <span className="text-sm font-bold uppercase tracking-wider">Back to Dashboard</span>
+          <span className="text-sm font-bold uppercase tracking-wider">{t('common.back')}</span>
         </button>
         <div className="flex items-center gap-3">
           <span className="text-xs text-gray-400 font-mono">CASE ID: {issue.id}</span>
@@ -108,7 +110,7 @@ const GovIssueDetail = () => {
             issue.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
             'bg-yellow-100 text-yellow-700'
           }`}>
-            {issue.status}
+            {issue.status === 'resolved' ? t('status.resolved') : issue.status === 'in_progress' ? t('status.inProgress') : t('status.pending')}
           </div>
         </div>
       </div>
@@ -118,11 +120,11 @@ const GovIssueDetail = () => {
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              {issue.title || 'Untitled Civic Issue'}
+              {issue.title || t('issue.title')}
             </h1>
             
             <div className="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 mb-8">
-              {issue.description || 'No description provided by reporter.'}
+              {issue.description || t('messages.noReportsFound')}
             </div>
 
             {issue.image_url && (
@@ -144,7 +146,7 @@ const GovIssueDetail = () => {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8">
             <div className="flex items-center gap-2 mb-6">
               <Shield size={20} className="text-[#DA532D]" />
-              <h2 className="text-lg font-bold">Government Internal Notes</h2>
+              <h2 className="text-lg font-bold">{t('dashboard.systemSettings')}</h2>
             </div>
 
             <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2">

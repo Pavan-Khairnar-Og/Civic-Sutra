@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { useTranslation } from 'react-i18next'
 import { IconFingerprint } from '@tabler/icons-react'
 import { fadeUp, slideInRight, scaleIn } from '../lib/animations.jsx'
 
@@ -10,6 +11,7 @@ import { fadeUp, slideInRight, scaleIn } from '../lib/animations.jsx'
  * Split-screen design with role selection and beautiful SVG illustration
  */
 const Login = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { login, isAuthenticated, isGov, isAnonymous } = useAuth()
   
@@ -225,9 +227,9 @@ const Login = () => {
                       : 'text-civic-textSecondary hover:text-civic-textPrimary'
                   }`}
                 >
-                  {tab === 'citizen' && 'Citizen'}
-                  {tab === 'government' && 'Government'}
-                  {tab === 'anonymous' && 'Anonymous'}
+                  {tab === 'citizen' && t('auth.citizen')}
+                  {tab === 'government' && t('auth.government')}
+                  {tab === 'anonymous' && t('auth.anonymous')}
                 </button>
               ))}
               

@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Menu, X, User, Settings, FileText, Map, Bell, Shield, 
   ChevronDown, LogOut, Home as HomeIcon, AlertTriangle, User as UserIcon,
   Sun, Moon
 } from 'lucide-react'
+import LanguageSelector from './LanguageSelector'
 
 const Navbar = () => {
+  const { t } = useTranslation()
   const [scrolled, setScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
@@ -36,15 +39,15 @@ const Navbar = () => {
   }, [])
 
   const navItems = [
-    { name: 'Home', path: '/home', icon: HomeIcon },
-    { name: 'Report Issue', path: '/report', icon: AlertTriangle },
-    { name: 'My Reports', path: '/my-reports', icon: FileText },
-    { name: 'Map View', path: '/map', icon: Map },
+    { name: t('navigation.home'), path: '/home', icon: HomeIcon },
+    { name: t('navigation.reportIssue'), path: '/report', icon: AlertTriangle },
+    { name: t('navigation.myReports'), path: '/my-reports', icon: FileText },
+    { name: t('navigation.mapView'), path: '/map', icon: Map },
   ]
 
   // Add Dashboard for government users
   if (isGov) {
-    navItems.push({ name: 'Dashboard', path: '/dashboard', icon: Shield })
+    navItems.push({ name: t('navigation.dashboard'), path: '/dashboard', icon: Shield })
   }
 
   const isActive = (path) => {
@@ -161,6 +164,9 @@ const Navbar = () => {
                 <span className="hidden sm:inline">{isDarkMode ? 'Dark' : 'Light'}</span>
               </button>
 
+              {/* Language Selector */}
+              <LanguageSelector className="hidden sm:block" />
+
               {/* Notification Bell (Gov Only) */}
               {isGov && (
                 <button className="relative p-2 text-civic-textSecondary hover:text-civic-orange transition-colors hidden sm:block">
@@ -174,14 +180,14 @@ const Navbar = () => {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <span className="hidden sm:flex px-3 py-1.5 bg-civic-muted text-civic-textSecondary rounded-full text-sm font-medium items-center gap-2">
                     <UserIcon className="w-4 h-4" />
-                    Anonymous
+                    {t('auth.anonymous')}
                   </span>
                   <Link
                     to="/login"
                     className="px-3 py-2 text-civic-textSecondary hover:text-civic-orange border border-civic-muted rounded-full text-sm font-medium transition-colors"
                   >
-                    <span className="hidden sm:inline">Sign In</span>
-                    <span className="sm:hidden">In</span>
+                    <span className="hidden sm:inline">{t('auth.signIn')}</span>
+                    <span className="sm:hidden">{t('auth.signIn')}</span>
                   </Link>
                 </div>
               ) : isAuthenticated ? (
@@ -198,7 +204,7 @@ const Navbar = () => {
                         {user?.name || 'User'}
                       </div>
                       <div className="text-xs text-civic-textSecondary">
-                        {isGov ? 'Government' : 'Citizen'}
+                        {isGov ? t('auth.government') : t('auth.citizen')}
                       </div>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-civic-textSecondary transition-transform ${
@@ -223,7 +229,7 @@ const Navbar = () => {
                             className="flex items-center space-x-2 px-3 py-2 text-sm text-civic-textSecondary hover:text-civic-orange hover:bg-civic-orangeLight/50 rounded-lg transition-colors"
                           >
                             <Settings className="w-4 h-4" />
-                            Profile
+                            {t('navigation.settings')}
                           </Link>
                           <Link
                             to="/my-reports"
@@ -231,14 +237,14 @@ const Navbar = () => {
                             className="flex items-center space-x-2 px-3 py-2 text-sm text-civic-textSecondary hover:text-civic-orange hover:bg-civic-orangeLight/50 rounded-lg transition-colors"
                           >
                             <FileText className="w-4 h-4" />
-                            My Reports
+                            {t('navigation.myReports')}
                           </Link>
                           <button
                             onClick={handleSignOut}
                             className="flex items-center space-x-2 px-3 py-2 text-sm text-civic-textSecondary hover:text-civic-orange hover:bg-civic-orangeLight/50 rounded-lg transition-colors w-full text-left"
                           >
                             <LogOut className="w-4 h-4" />
-                            Logout
+                            {t('auth.signOut')}
                           </button>
                         </div>
                       </motion.div>
