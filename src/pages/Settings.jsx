@@ -219,7 +219,8 @@ const Settings = () => {
       setError('')
 
       const { data: { user } } = await supabase.auth.getUser()
-      const profileData = await getProfile(user.id)
+      // Use existing profile data from state instead of making fresh API call
+      const profileData = profile
 
       const userData = {
         profile: profileData || null,
