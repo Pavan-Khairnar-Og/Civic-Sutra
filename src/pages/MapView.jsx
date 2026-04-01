@@ -347,9 +347,9 @@ const statuses = [
 
 // Custom marker component
 const createCustomMarker = (category, severity) => {
-  // Handle both old format ("Water Supply") and new format ("water_supply")
-  const categoryKey = mapCategoryToTranslationKey(category);
-  const categoryInfo = categories.find(c => c.id === category || c.id === categoryKey) || categories[0];
+  // Map AI department to standard category first
+  const mappedCategoryId = mapAIDepartmentToCategory(category);
+  const categoryInfo = categories.find(c => c.id === mappedCategoryId) || categories[0];
   const severityInfo = severities.find(s => s.id === severity) || severities[0];
   
   // Fallback colors if category not found
@@ -1029,7 +1029,7 @@ const MapView = () => {
                 <Marker
                   key={report.id}
                   position={[report.latitude, report.longitude]}
-                  icon={createCustomMarker(aiDepartment, report.ai_severity)}
+                  icon={createCustomMarker(mappedCategoryId, report.ai_severity)}
                   eventHandlers={{
                     click: () => {
                       setSelectedReport(report)
